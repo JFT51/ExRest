@@ -1,15 +1,406 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My new app</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Analytics Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <div class="fixed-banner">
+        <div class="site-logo">Restaurant Analytics</div>
+        <nav class="tab-menu">
+            <button class="tab-button active" data-tab="overview">Overview</button>
+            <button class="tab-button" data-tab="benchmark">Hourly Benchmark</button>
+            <button class="tab-button" data-tab="daily-benchmark">Daily Benchmark</button>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div id="overview" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon"><i class="fas fa-users"></i></div>
+                    <div class="kpi-title">Monthly Visitors</div>
+                    <div class="kpi-value" id="monthlyVisitors">-</div>
+                    <div class="kpi-label">Total Customers</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon"><i class="fas fa-venus-mars"></i></div>
+                    <div class="kpi-title">Gender Distribution</div>
+                    <div class="kpi-value">
+                        <span id="menPercentage">-%</span> / <span id="womenPercentage">-%</span>
+                    </div>
+                    <div class="kpi-label">Men / Women</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon"><i class="fas fa-bullseye"></i></div>
+                    <div class="kpi-title">Capture Rate</div>
+                    <div class="kpi-value" id="avgCaptureRate">-%</div>
+                    <div class="kpi-label">Monthly Average</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="kpi-title">Conversion Rate</div>
+                    <div class="kpi-value" id="conversionRate">-%</div>
+                    <div class="kpi-label">Groups / Visitors</div>
+                </div>
+            </div>
+
+            <div class="ticker-section">
+                <div class="ticker-container">
+                    <div class="ticker-title">Top 3 Customer Days</div>
+                    <div class="ticker-content" id="customersTickerContent">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="ticker-container">
+                    <div class="ticker-title">Top 3 Capture Rate Days</div>
+                    <div class="ticker-content" id="captureRateTickerContent">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="month-selector">
+                <button id="prevMonth">←</button>
+                <h3 id="currentMonth">Loading...</h3>
+                <button id="nextMonth">→</button>
+            </div>
+
+            <div class="chart-section">
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+                <div class="dataset-selector">
+                    <h3>Datasets</h3>
+                    <div class="dataset-option customers">
+                        <input type="checkbox" id="showCustomers" checked>
+                        <label for="showCustomers">Daily Customers</label>
+                    </div>
+                    <div class="dataset-option passersby">
+                        <input type="checkbox" id="showPassersby" checked>
+                        <label for="showPassersby">Passersby</label>
+                    </div>
+                    <div class="dataset-option capture-rate">
+                        <input type="checkbox" id="showCaptureRate" checked>
+                        <label for="showCaptureRate">Capture Rate</label>
+                    </div>
+                </div>
+            </div>
+
+            <nav>
+                <button id="hourDataBtn">Hour Data</button>
+                <button id="dayDataBtn">Day Data</button>
+                <button id="weekDataBtn" class="active">Week Data</button>
+            </nav>
+
+            <div id="hourDataContainer" class="data-container">
+                <h2>Hour Data</h2>
+                <div class="table-wrapper">
+                    <table id="hourDataTable">
+                        <thead>
+                            <!-- Headers will be inserted by JavaScript -->
+                        </thead>
+                        <tbody>
+                            <!-- Data will be inserted by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="dayDataContainer" class="data-container hidden">
+                <h2>Day Data</h2>
+                <div class="table-wrapper">
+                    <table id="dayDataTable">
+                        <thead>
+                            <!-- Headers will be inserted by JavaScript -->
+                        </thead>
+                        <tbody>
+                            <!-- Data will be inserted by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="weekDataContainer" class="data-container">
+                <h2>Week Data</h2>
+                <div class="table-wrapper">
+                    <table id="weekDataTable">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Period</th>
+                                <th>Visitors</th>
+                                <th>Passersby</th>
+                                <th>Capture Rate</th>
+                                <th>Men/Women</th>
+                                <th>Groups</th>
+                                <th>Conversion</th>
+                                <th>Avg. Dwell Time</th>
+                                <th>Accuracy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="benchmark" class="tab-content">
+            <div class="date-picker-sticky">
+                <div class="date-picker-container">
+                    <label for="benchmarkDate">Select Date:</label>
+                    <input type="date" id="benchmarkDate">
+                    <div class="benchmark-date-container">
+                        <div class="benchmark-toggle">
+                            <input type="checkbox" id="enableBenchmark" name="benchmarkType">
+                        </div>
+                        <label for="benchmarkCompareDate">Compare with:</label>
+                        <input type="date" id="benchmarkCompareDate" disabled>
+                        <div class="benchmark-toggle average-toggle">
+                            <input type="checkbox" id="enableAverageBenchmark" name="benchmarkType">
+                            <label for="enableAverageBenchmark">Compare with Average</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="benchmark-table-container">
+                <table class="benchmark-comparison">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Customers</th>
+                            <th>Capture Rate</th>
+                            <th>Gender Distribution</th>
+                            <th>Dwell Time</th>
+                            <th>Data Accuracy</th>
+                            <th>Weather</th>
+                        </tr>
+                    </thead>
+                    <tbody id="benchmarkTableBody">
+                        <tr>
+                            <td colspan="7">Select a date to view data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="capture-rate-cards">
+                <div class="capture-card">
+                    <h3><i class="fas fa-sun-rise"></i> Morning</h3>
+                    <p>07:00 - 11:00</p>
+                    <div class="capture-value" id="morningCaptureRate">0.0%</div>
+                </div>
+                <div class="capture-card">
+                    <h3><i class="fas fa-sun"></i> Noon</h3>
+                    <p>12:00 - 14:00</p>
+                    <div class="capture-value" id="noonCaptureRate">0.0%</div>
+                </div>
+                <div class="capture-card">
+                    <h3><i class="fas fa-sun-set"></i> Afternoon</h3>
+                    <p>17:00 - 20:00</p>
+                    <div class="capture-value" id="afternoonCaptureRate">0.0%</div>
+                </div>
+                <div class="capture-card">
+                    <h3><i class="fas fa-cog"></i> Custom</h3>
+                    <p id="customPeriodLabel">08:00 - 20:00</p>
+                    <div class="capture-value" id="customCaptureRate">0.0%</div>
+                </div>
+                <div class="time-control-card">
+                    <div class="time-controls">
+                        <div class="time-group">
+                            <label>Start Time:</label>
+                            <select id="customPeriodStart" class="time-select">
+                                <!-- Options will be added by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="time-group">
+                            <label>End Time:</label>
+                            <select id="customPeriodEnd" class="time-select">
+                                <!-- Options will be added by JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-section">
+                <div class="chart-container">
+                    <canvas id="benchmarkHourlyChart"></canvas>
+                </div>
+                <div class="dataset-selector">
+                    <h3>Datasets</h3>
+                    <div class="dataset-option visitors">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="benchmarkShowVisitors" checked>
+                            <button class="toggle-labels" data-dataset="visitors" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="benchmarkShowVisitors">Visitors</label>
+                    </div>
+                    <div class="dataset-option passersby">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="benchmarkShowPassersby">
+                            <button class="toggle-labels" data-dataset="passersby" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="benchmarkShowPassersby">Passersby</label>
+                    </div>
+                    <div class="dataset-option capture-rate">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="benchmarkShowCaptureRate" checked>
+                            <button class="toggle-labels" data-dataset="capture-rate" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="benchmarkShowCaptureRate">Capture Rate</label>
+                    </div>
+                    <div class="dataset-option conversion">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="benchmarkShowConversion">
+                            <button class="toggle-labels" data-dataset="conversion" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="benchmarkShowConversion">Conversion</label>
+                    </div>
+                    <div class="dataset-option men">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="benchmarkShowMen">
+                            <button class="toggle-labels" data-dataset="men" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="benchmarkShowMen">Men</label>
+                    </div>
+                    <div class="dataset-option women">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="benchmarkShowWomen">
+                            <button class="toggle-labels" data-dataset="women" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="benchmarkShowWomen">Women</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="daily-benchmark" class="tab-content">
+            <div class="date-picker-sticky">
+                <div class="date-picker-container">
+                    <label for="dailyBenchmarkDate">Select Week:</label>
+                    <input type="date" id="dailyBenchmarkDate">
+                    <div class="benchmark-date-container">
+                        <div class="benchmark-toggle">
+                            <input type="checkbox" id="enableDailyBenchmark" name="benchmarkType">
+                        </div>
+                        <label for="dailyBenchmarkCompareDate">Compare with:</label>
+                        <input type="date" id="dailyBenchmarkCompareDate" disabled>
+                        <div class="benchmark-toggle average-toggle">
+                            <input type="checkbox" id="enableDailyAverageBenchmark" name="benchmarkType">
+                            <label for="enableDailyAverageBenchmark">Compare with Average</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="benchmark-table-container">
+                <table class="benchmark-comparison">
+                    <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>Total Visitors</th>
+                            <th>Daily Average</th>
+                            <th>Capture Rate</th>
+                            <th>Gender Distribution</th>
+                            <th>Avg. Dwell Time</th>
+                            <th>Data Accuracy</th>
+                            <th>Weather Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyBenchmarkTableBody">
+                        <tr>
+                            <td colspan="8">Select a week to view data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="capture-rate-cards">
+                <div class="capture-card">
+                    <h3><i class="fas fa-calendar-day"></i> Monday-Tuesday</h3>
+                    <p>Start of Week</p>
+                    <div class="capture-value" id="startWeekCaptureRate">0.0%</div>
+                </div>
+                <div class="capture-card">
+                    <h3><i class="fas fa-calendar-week"></i> Wednesday-Thursday</h3>
+                    <p>Mid Week</p>
+                    <div class="capture-value" id="midWeekCaptureRate">0.0%</div>
+                </div>
+                <div class="capture-card">
+                    <h3><i class="fas fa-calendar-check"></i> Friday-Sunday</h3>
+                    <p>Weekend</p>
+                    <div class="capture-value" id="weekendCaptureRate">0.0%</div>
+                </div>
+                <div class="capture-card">
+                    <h3><i class="fas fa-calendar-alt"></i> Custom Days</h3>
+                    <p id="customDaysLabel">Select days</p>
+                    <div class="capture-value" id="customDaysCaptureRate">0.0%</div>
+                </div>
+                <div class="time-control-card">
+                    <div class="time-controls">
+                        <div class="weekday-group">
+                            <!-- Add checkboxes for each day of the week -->
+                            <label><input type="checkbox" value="1"> Mon</label>
+                            <label><input type="checkbox" value="2"> Tue</label>
+                            <label><input type="checkbox" value="3"> Wed</label>
+                            <label><input type="checkbox" value="4"> Thu</label>
+                            <label><input type="checkbox" value="5"> Fri</label>
+                            <label><input type="checkbox" value="6"> Sat</label>
+                            <label><input type="checkbox" value="0"> Sun</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-section">
+                <div class="chart-container">
+                    <canvas id="dailyBenchmarkChart"></canvas>
+                </div>
+                <div class="dataset-selector">
+                    <h3>Datasets</h3>
+                    <!-- Same structure as hourly benchmark but with different IDs -->
+                    <!-- ... copy dataset options with updated IDs ... -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- First load utils since other files depend on its helper functions -->
+    <script src="utils.js"></script>
+    
+    <!-- Load core data handling next -->
+    <script src="data.js"></script>
+    
+    <!-- Load UI components that depend on data -->
+    <script src="charts.js"></script>
+    <script src="display.js"></script>
+    <script src="navigation.js"></script>
+    <script src="benchmark.js"></script>
+    
+    <!-- Load app initialization last -->
+    <script src="app.js"></script>
+</body>
 </html>
