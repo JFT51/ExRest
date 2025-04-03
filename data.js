@@ -49,7 +49,7 @@ const generateRandomDayData = (date) => {
 
 async function fetchData() {
     try {
-        const response = await fetch('https://raw.githubusercontent.com/JFT51/ExRest/refs/heads/main/ikxe.csv');
+        const response = await fetch('https://raw.githubusercontent.com/JFT51/ExRest/refs/heads/main/ikxeold.csv');
         const text = await response.text();
         
         const rows = text.split('\n')
