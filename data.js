@@ -57,7 +57,7 @@ async function fetchData() {
             .filter(row => row.length > 0)
             .map(row => row.split(','));
 
-        const headers = rows[0];
+        const headers = rows[1];
         const data = rows.slice(1).filter(row => row.length === headers.length);
 
         processHourData(data);
