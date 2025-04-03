@@ -55,7 +55,7 @@ async function fetchData() {
         const rows = text.split('\n')
             .map(row => row.trim())
             .filter(row => row.length > 0)
-            .map(row => row.split(';'));
+            .map(row => row.split(','));
 
         const headers = rows[0];
         const data = rows.slice(1).filter(row => row.length === headers.length);
