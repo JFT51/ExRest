@@ -107,11 +107,20 @@ function createMonthlyChart() {
                     },
                     title: {
                         display: true,
-                        text: 'Date'
+                        text: 'Date',
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 16,
+                            weight: 'bold'
+                        }
                     },
                     ticks: {
                         maxRotation: 45,
-                        minRotation: 45
+                        minRotation: 45,
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 12
+                        },
+                        autoSkip: true,
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 12
                     }
                 },
                 y: {
@@ -119,7 +128,17 @@ function createMonthlyChart() {
                     position: 'left',
                     title: {
                         display: true,
-                        text: 'Number of Customers'
+                        text: 'Number of Customers',
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 16,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 12
+                        },
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 10
                     }
                 },
                 y1: {
@@ -127,10 +146,20 @@ function createMonthlyChart() {
                     position: 'right',
                     title: {
                         display: true,
-                        text: 'Number of Passersby'
+                        text: 'Number of Passersby',
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 16,
+                            weight: 'bold'
+                        }
                     },
                     grid: {
                         drawOnChartArea: false
+                    },
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 12
+                        },
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 10
                     }
                 },
                 y2: {
@@ -138,7 +167,11 @@ function createMonthlyChart() {
                     position: 'right',
                     title: {
                         display: true,
-                        text: 'Capture Rate (%)'
+                        text: 'Capture Rate (%)',
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 16,
+                            weight: 'bold'
+                        }
                     },
                     grid: {
                         drawOnChartArea: false
@@ -146,7 +179,11 @@ function createMonthlyChart() {
                     ticks: {
                         callback: function(value) {
                             return value + '%';
-                        }
+                        },
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 12
+                        },
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 10
                     }
                 }
             }
@@ -270,7 +307,44 @@ function initializeMonthlyChartControls() {
     document.getElementById('showPassersby').addEventListener('change', createMonthlyChart);
     document.getElementById('showCaptureRate').addEventListener('change', createMonthlyChart);
 
-    // Add event listeners for toggle-labels buttons
+    // Add window resize handler to update font sizes
+    window.addEventListener('resize', handleMonthlyChartResize);
+}
+
+// Handle window resize for monthly chart
+function handleMonthlyChartResize() {
+    // Debounce the resize event
+    if (window.monthlyChartResizeTimeout) {
+        clearTimeout(window.monthlyChartResizeTimeout);
+    }
+
+    window.monthlyChartResizeTimeout = setTimeout(() => {
+        if (monthChart) {
+            // Update font sizes based on window width
+            const isPortrait = window.innerWidth < 768;
+
+            // Update X axis
+            monthChart.options.scales.x.title.font.size = isPortrait ? 8 : 16;
+            monthChart.options.scales.x.ticks.font.size = isPortrait ? 8 : 12;
+            monthChart.options.scales.x.ticks.maxTicksLimit = isPortrait ? 6 : 12;
+
+            // Update Y axes
+            ['y', 'y1', 'y2'].forEach(axisId => {
+                if (monthChart.options.scales[axisId]) {
+                    monthChart.options.scales[axisId].title.font.size = isPortrait ? 8 : 16;
+                    monthChart.options.scales[axisId].ticks.font.size = isPortrait ? 8 : 12;
+                    monthChart.options.scales[axisId].ticks.maxTicksLimit = isPortrait ? 6 : 10;
+                }
+            });
+
+            // Update the chart
+            monthChart.update();
+        }
+    }, 250);
+}
+
+// Add event listeners for toggle-labels buttons
+function initializeToggleLabelsButtons() {
     document.querySelectorAll('#monthly .toggle-labels').forEach(button => {
         button.addEventListener('click', (e) => {
             e.preventDefault();
@@ -293,6 +367,9 @@ function initializeMonthlyChartControls() {
         });
     });
 }
+
+// Call both initialization functions
+initializeToggleLabelsButtons();
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {

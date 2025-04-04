@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', handleDatePickerScroll);
     // Initial call to set the correct state
     handleDatePickerScroll();
+
+    // Initialize hamburger menu
+    initializeHamburgerMenu();
 });
 
 function toggleView(view) {
@@ -113,4 +116,45 @@ function changeMonth(delta) {
 function updateMonthDisplay() {
     const monthName = window.dashboardState.selectedDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
     document.getElementById('currentMonth').textContent = monthName;
+}
+
+// Initialize hamburger menu functionality
+function initializeHamburgerMenu() {
+    const hamburgerBtn = document.getElementById('hamburgerMenu');
+    const tabMenu = document.getElementById('tabMenu');
+    const tabButtons = document.querySelectorAll('.tab-button');
+
+    if (!hamburgerBtn || !tabMenu) return;
+
+    // Toggle menu when hamburger is clicked
+    hamburgerBtn.addEventListener('click', () => {
+        hamburgerBtn.classList.toggle('active');
+        tabMenu.classList.toggle('active');
+    });
+
+    // Close menu when a tab is clicked
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            hamburgerBtn.classList.remove('active');
+            tabMenu.classList.remove('active');
+        });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (event) => {
+        if (!hamburgerBtn.contains(event.target) &&
+            !tabMenu.contains(event.target) &&
+            tabMenu.classList.contains('active')) {
+            hamburgerBtn.classList.remove('active');
+            tabMenu.classList.remove('active');
+        }
+    });
+
+    // Close menu when window is resized to desktop size
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 991 && tabMenu.classList.contains('active')) {
+            hamburgerBtn.classList.remove('active');
+            tabMenu.classList.remove('active');
+        }
+    });
 }

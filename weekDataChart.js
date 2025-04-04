@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Data ready, initializing week data chart');
             initializeWeekDataChart();
             initializeWeekDataChartControls();
+            initializeToggleLabelsButtons();
         }
     }, 100);
 });
@@ -138,11 +139,20 @@ function initializeWeekDataChart() {
                     },
                     title: {
                         display: true,
-                        text: 'Date'
+                        text: 'Date',
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 16,
+                            weight: 'bold'
+                        }
                     },
                     ticks: {
                         maxRotation: 45,
-                        minRotation: 45
+                        minRotation: 45,
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 12
+                        },
+                        autoSkip: true,
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 12
                     }
                 },
                 y: {
@@ -322,7 +332,55 @@ function initializeWeekDataChartControls() {
         });
     });
 
-    // Add data label toggle listeners
+    // Add window resize handler to update font sizes
+    window.addEventListener('resize', handleWeekDataChartResize);
+}
+
+// Handle window resize for week data chart
+function handleWeekDataChartResize() {
+    // Debounce the resize event
+    if (window.weekDataChartResizeTimeout) {
+        clearTimeout(window.weekDataChartResizeTimeout);
+    }
+
+    window.weekDataChartResizeTimeout = setTimeout(() => {
+        if (weekDataChart) {
+            // Update font sizes based on window width
+            const isPortrait = window.innerWidth < 768;
+
+            // Update X axis
+            if (weekDataChart.options.scales.x.title && weekDataChart.options.scales.x.title.font) {
+                weekDataChart.options.scales.x.title.font.size = isPortrait ? 8 : 16;
+            }
+
+            if (weekDataChart.options.scales.x.ticks && weekDataChart.options.scales.x.ticks.font) {
+                weekDataChart.options.scales.x.ticks.font.size = isPortrait ? 8 : 12;
+                weekDataChart.options.scales.x.ticks.maxTicksLimit = isPortrait ? 6 : 12;
+            }
+
+            // Update Y axes
+            ['y', 'y1'].forEach(axisId => {
+                if (weekDataChart.options.scales[axisId]) {
+                    // Update font sizes for title
+                    if (weekDataChart.options.scales[axisId].title && weekDataChart.options.scales[axisId].title.font) {
+                        weekDataChart.options.scales[axisId].title.font.size = isPortrait ? 8 : 14;
+                    }
+
+                    // Update font sizes for ticks
+                    if (weekDataChart.options.scales[axisId].ticks && weekDataChart.options.scales[axisId].ticks.font) {
+                        weekDataChart.options.scales[axisId].ticks.font.size = isPortrait ? 8 : 12;
+                    }
+                }
+            });
+
+            // Update the chart
+            weekDataChart.update();
+        }
+    }, 250);
+}
+
+// Add data label toggle listeners
+function initializeToggleLabelsButtons() {
     document.querySelectorAll('#week-data .toggle-labels').forEach(button => {
         button.addEventListener('click', (e) => {
             e.preventDefault();
@@ -346,9 +404,13 @@ function initializeWeekDataChartControls() {
                 showWeekDataLabels.women = !showWeekDataLabels.women;
             }
 
-            const selectedDate = getStartOfWeek(new Date(dateInput.value));
+            const selectedDate = getStartOfWeek(new Date(document.getElementById('weekDataDate').value));
             let compareDate = null;
             let averageData = null;
+
+            const benchmarkToggle = document.getElementById('enableWeekDataBenchmark');
+            const averageBenchmarkToggle = document.getElementById('enableWeekDataAverageBenchmark');
+            const compareInput = document.getElementById('weekDataCompareDate');
 
             if (benchmarkToggle.checked) {
                 compareDate = getStartOfWeek(new Date(compareInput.value));

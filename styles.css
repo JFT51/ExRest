@@ -253,6 +253,7 @@ tr:hover {
     border-radius: 5px;
     cursor: pointer;
     font-size: 1.2rem;
+    min-width: 40px;
 }
 
 .month-selector button:hover {
@@ -298,9 +299,9 @@ tr:hover {
 }
 
 .chart-download-btn {
-    background-color: #859527; /* Primary green color */
+    background-color: var(--primary-green); /* Primary green color */
     color: white;
-    border: 1px solid #859527;
+    border: 1px solid var(--primary-green);
     border-radius: 4px;
     padding: 8px;
     width: 32px;
@@ -316,8 +317,8 @@ tr:hover {
 }
 
 .chart-download-btn:hover {
-    background-color: #6b7a1e; /* Darker green for hover */
-    border-color: #6b7a1e;
+    background-color: #3a8a2c; /* Darker green for hover */
+    border-color: #3a8a2c;
     transform: translateY(-2px);
     box-shadow: 0 3px 5px rgba(0,0,0,0.2);
 }
@@ -1103,6 +1104,40 @@ input[type="date"]:disabled {
     height: 80px; /* Doubled height */
 }
 
+/* Hamburger Menu Styles */
+.hamburger-menu {
+    display: none; /* Hidden by default, shown in portrait mode */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    z-index: 1010;
+    position: relative;
+}
+
+.hamburger-line {
+    display: block;
+    width: 25px;
+    height: 3px;
+    margin: 5px 0;
+    background-color: white;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+/* Hamburger animation when active */
+.hamburger-menu.active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
 /* Add media query for responsive logo size */
 @media (max-width: 768px) {
     .company-logo {
@@ -1611,29 +1646,74 @@ input:checked + .slider:before {
 
 /* Tablets (768px to 991px) */
 @media (max-width: 991px) {
+    /* Hamburger menu for portrait layout */
+    .hamburger-menu {
+        display: block;
+    }
+
     .fixed-banner {
-        flex-direction: column;
-        height: auto;
-        padding: 10px;
+        flex-direction: row; /* Keep row layout for logo and hamburger */
+        height: 70px;
+        padding: 10px 15px;
     }
 
     .site-logo {
-        margin-bottom: 10px;
+        margin-bottom: 0;
     }
 
     .tab-menu {
-        justify-content: center;
-        width: 100%;
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: transparent; /* Remove background when folded */
+        flex-direction: column;
+        align-items: center;
+        padding: 0; /* Remove padding when folded */
+        transform: translateY(-100%);
+        transition: all 0.3s ease; /* Transition all properties */
+        z-index: 999;
+        box-shadow: none; /* Remove shadow when folded */
+        max-height: 0;
+        overflow: hidden;
+        pointer-events: none; /* Prevent interaction when folded */
+    }
+
+    .tab-menu.active {
+        transform: translateY(0);
+        max-height: 300px;
+        background: var(--primary-green); /* Add background when active */
+        padding: 20px; /* Add padding when active */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Add shadow when active */
+        pointer-events: auto; /* Enable interaction when active */
     }
 
     .tab-button {
-        padding: 8px 15px;
-        font-size: 0.9rem;
-        margin: 0 5px 5px 0;
+        width: 100%;
+        text-align: center;
+        padding: 12px 15px;
+        font-size: 1rem;
+        margin: 5px 0;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        opacity: 0; /* Hide buttons when menu is folded */
+        transition: opacity 0.2s ease;
+    }
+
+    .tab-menu.active .tab-button {
+        opacity: 1; /* Show buttons when menu is active */
+    }
+
+    .tab-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .tab-button.active {
+        background: var(--primary-orange);
     }
 
     .main-content {
-        margin-top: 130px;
+        margin-top: 90px;
     }
 
     .ticker-section {
@@ -1652,23 +1732,49 @@ input:checked + .slider:before {
         margin-bottom: 10px;
     }
 
+    /* Improved layout for date picker in portrait mode */
     .date-picker-container {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 15px;
+    }
+
+    .date-picker-container > label,
+    .date-picker-container > input[type="date"] {
+        margin: 0;
     }
 
     .benchmark-date-container {
         border-left: none;
-        border-top: 1px solid rgba(255, 255, 255, 0.3);
+        border-top: none;
         padding-left: 0;
-        padding-top: 15px;
-        margin-top: 15px;
-        flex-direction: column;
-        align-items: stretch;
+        padding-top: 0;
+        margin-top: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        margin-top: 10px;
     }
 
     .benchmark-toggle {
-        margin: 10px 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .benchmark-toggle input[type="checkbox"] {
+        margin-right: 5px;
+    }
+
+    .average-toggle {
+        margin-left: 0;
+        padding: 5px 8px;
+        border-radius: 4px;
     }
 
     .capture-rate-cards {
@@ -1709,19 +1815,65 @@ input:checked + .slider:before {
     }
 
     .month-selector {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
         gap: 10px;
-        padding: 10px;
+        padding: 10px 15px;
     }
 
     .month-selector h3 {
-        order: -1;
-        margin-bottom: 10px;
+        order: 0;
+        margin: 0;
+        font-size: 1.1rem;
+        min-width: 0;
+        flex: 1;
     }
 
     .chart-container {
         height: 350px;
         padding: 10px;
+    }
+
+    /* Further optimized date picker for smaller screens */
+    .date-picker-container {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .date-picker-container > label {
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .date-picker-container > input[type="date"] {
+        padding: 6px;
+        font-size: 0.9rem;
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .benchmark-date-container {
+        gap: 8px;
+        justify-content: flex-start;
+    }
+
+    .benchmark-date-container label {
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .benchmark-toggle {
+        font-size: 0.9rem;
+    }
+
+    .average-toggle {
+        font-size: 0.9rem;
+        padding: 4px 6px;
+    }
+
+    .average-toggle label {
+        font-size: 0.9rem;
     }
 
     .dataset-option {
@@ -1781,21 +1933,55 @@ input:checked + .slider:before {
 @media (max-width: 575px) {
     .fixed-banner {
         padding: 8px;
+        height: 60px;
     }
 
     .company-logo {
         height: 40px;
     }
 
+    .hamburger-menu {
+        padding: 8px;
+    }
+
+    .hamburger-line {
+        width: 22px;
+        height: 2px;
+        margin: 4px 0;
+    }
+
+    .tab-menu {
+        top: 60px;
+    }
+
+    .tab-menu.active {
+        padding: 15px;
+    }
+
     .tab-button {
-        padding: 6px 10px;
-        font-size: 0.8rem;
-        margin: 0 3px 3px 0;
+        padding: 10px;
+        font-size: 0.9rem;
+        margin: 3px 0;
     }
 
     .main-content {
-        margin-top: 110px;
+        margin-top: 70px;
         padding: 5px;
+    }
+
+    .month-selector {
+        padding: 8px 10px;
+    }
+
+    .month-selector button {
+        padding: 6px 10px;
+        font-size: 1rem;
+        min-width: 35px;
+    }
+
+    .month-selector h3 {
+        font-size: 0.9rem;
+        text-align: center;
     }
 
     .kpi-icon i {
@@ -1819,17 +2005,41 @@ input:checked + .slider:before {
         padding: 8px;
     }
 
+    /* Maximally compact date picker for very small screens */
     .date-picker-container {
-        padding: 10px;
-    }
-
-    .date-picker-container label {
-        font-size: 1rem;
-    }
-
-    .date-picker-container input[type="date"] {
         padding: 8px;
-        font-size: 0.9rem;
+        gap: 5px;
+    }
+
+    .date-picker-container > label {
+        font-size: 0.85rem;
+    }
+
+    .date-picker-container > input[type="date"] {
+        padding: 5px;
+        font-size: 0.85rem;
+        min-width: 110px;
+    }
+
+    .benchmark-date-container {
+        gap: 5px;
+    }
+
+    .benchmark-date-container label {
+        font-size: 0.85rem;
+    }
+
+    .benchmark-toggle {
+        font-size: 0.85rem;
+    }
+
+    .average-toggle {
+        font-size: 0.85rem;
+        padding: 3px 5px;
+    }
+
+    .average-toggle label {
+        font-size: 0.85rem;
     }
 
     .capture-card {
