@@ -152,17 +152,34 @@ function initializeWeekDataChart() {
                     title: {
                         display: true,
                         text: 'Visitors/Men/Women',
-                        color: 'rgb(45, 107, 34)' // Updated to #2d6b22
+                        color: 'rgb(45, 107, 34)', // Updated to #2d6b22
+                        font: {
+                            weight: 'bold'
+                        }
                     },
-                    suggestedMax: 100,
-                    grace: '5%',
+                    // Auto-scaling will be handled in updateWeekDataChart
+                    grace: '10%',
                     ticks: {
                         precision: 0,
-                        stepSize: 10,
                         callback: function(value) {
                             return Math.round(value).toLocaleString();
                         },
-                        color: 'rgb(45, 107, 34)' // Updated to #2d6b22
+                        color: 'rgb(45, 107, 34)', // Updated to #2d6b22
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    // Adapt to available space
+                    adapters: {
+                        tick: {
+                            format: function(value) {
+                                // For small screens, abbreviate large numbers
+                                if (window.innerWidth < 576 && value >= 1000) {
+                                    return (value / 1000).toFixed(0) + 'k';
+                                }
+                                return value.toLocaleString();
+                            }
+                        }
                     }
                 },
                 y1: {
@@ -175,17 +192,22 @@ function initializeWeekDataChart() {
                     title: {
                         display: true,
                         text: 'Other Metrics',
-                        color: 'rgb(139, 69, 19)'
+                        color: 'rgb(139, 69, 19)',
+                        font: {
+                            weight: 'bold'
+                        }
                     },
-                    suggestedMax: 100,
-                    grace: '5%',
+                    // Auto-scaling will be handled in updateWeekDataChart
+                    grace: '10%',
                     ticks: {
                         precision: 2,
-                        stepSize: 10,
                         callback: function(value) {
                             return value + '%';
                         },
-                        color: 'rgb(139, 69, 19)'
+                        color: 'rgb(139, 69, 19)',
+                        font: {
+                            weight: 'bold'
+                        }
                     }
                 }
             }
@@ -419,6 +441,7 @@ function updateWeekDataChart(weekStart, compareWeekStart = null, averageData = n
         datasets.push({
             ...config,
             data: dayData,
+            dataKey: config.dataKey, // Ensure dataKey is included for Y-axis scaling
             datalabels: {
                 display: (context) => {
                     const value = context.dataset.data[context.dataIndex];
@@ -479,6 +502,7 @@ function updateWeekDataChart(weekStart, compareWeekStart = null, averageData = n
                 ...config,
                 label: `${config.label} ${comparisonLabel}`,
                 data: compareDataArray,
+                dataKey: config.dataKey, // Ensure dataKey is included for Y-axis scaling
                 backgroundColor: comparisonBgColor,
                 borderColor: 'rgba(150, 150, 150, 0.8)',
                 borderDash: [5, 5],
@@ -598,6 +622,66 @@ function updateWeekDataChart(weekStart, compareWeekStart = null, averageData = n
         };
         addDataset(config, weekData, comparisonData);
         showY = true;
+    }
+
+    // Calculate max values for better Y-axis scaling
+    let maxVisitors = 0;
+    let maxPassersby = 0;
+    let maxCaptureRate = 0;
+    let maxConversion = 0;
+
+    datasets.forEach(dataset => {
+        if (dataset.yAxisID === 'y') {
+            // Find max value for visitors axis
+            const max = Math.max(...dataset.data.filter(val => val !== null && val !== undefined));
+            if (max > maxVisitors) maxVisitors = max;
+        } else if (dataset.yAxisID === 'y1') {
+            if (dataset.dataKey === 'passersby') {
+                // Find max value for passersby
+                const max = Math.max(...dataset.data.filter(val => val !== null && val !== undefined));
+                if (max > maxPassersby) maxPassersby = max;
+            } else if (dataset.dataKey === 'captureRate') {
+                // Find max value for capture rate
+                const max = Math.max(...dataset.data.filter(val => val !== null && val !== undefined));
+                if (max > maxCaptureRate) maxCaptureRate = max;
+            } else if (dataset.dataKey === 'conversion') {
+                // Find max value for conversion
+                const max = Math.max(...dataset.data.filter(val => val !== null && val !== undefined));
+                if (max > maxConversion) maxConversion = max;
+            }
+        }
+    });
+
+    // Set Y-axis max values for better visualization
+    if (showY) {
+        // For visitors axis, round up to nearest 100 or 1000 depending on magnitude
+        if (maxVisitors > 0) {
+            const roundTo = maxVisitors > 1000 ? 1000 : 100;
+            weekDataChart.options.scales.y.max = Math.ceil(maxVisitors / roundTo) * roundTo;
+
+            // Set appropriate step size
+            const stepSize = maxVisitors > 1000 ? 200 : (maxVisitors > 500 ? 100 : 50);
+            weekDataChart.options.scales.y.ticks.stepSize = stepSize;
+        }
+    }
+
+    if (showY1) {
+        // For percentage axis (capture rate and conversion)
+        const maxPercentage = Math.max(maxCaptureRate, maxConversion);
+        if (maxPercentage > 0) {
+            // Round up to nearest 5% or 10% depending on magnitude
+            const roundTo = maxPercentage > 50 ? 10 : 5;
+            weekDataChart.options.scales.y1.max = Math.ceil(maxPercentage / roundTo) * roundTo;
+
+            // Set appropriate step size
+            const stepSize = maxPercentage > 50 ? 10 : (maxPercentage > 20 ? 5 : 2);
+            weekDataChart.options.scales.y1.ticks.stepSize = stepSize;
+        }
+
+        // If passersby is shown and significantly larger than visitors, use a separate axis
+        if (maxPassersby > 0 && maxPassersby > maxVisitors * 2) {
+            // TODO: Consider adding a separate Y-axis for passersby if needed
+        }
     }
 
     // Update chart

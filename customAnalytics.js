@@ -1,13 +1,13 @@
 /**
- * Custom Analytics JavaScript
- * Integrated with the main dashboard
+ * Custom Analytics Tab JavaScript
+ * Separate script file to avoid conflicts with other scripts
  */
 
 // Initialize chart variable
-let analyticsChart = null;
+let customAnalyticsChart = null;
 
 // Initialize state object
-const analyticsState = {
+const customAnalyticsState = {
     period: 'days',
     startHour: '00:00',
     endHour: '23:00',
@@ -27,16 +27,35 @@ document.addEventListener('DOMContentLoaded', () => {
             window.dashboardState.dayData &&
             window.dashboardState.dayData.length > 0) {
             clearInterval(dataCheckInterval);
-            console.log('Data ready for analytics');
+            console.log('Data ready for custom analytics');
 
             // Initialize analytics components
-            initializeAnalytics();
+            initializeCustomAnalytics();
+
+            // Add window resize event listener for responsive behavior
+            window.addEventListener('resize', handleWindowResize);
         }
     }, 100);
 });
 
-// Initialize all analytics components
-function initializeAnalytics() {
+// Handle window resize events for responsive behavior
+function handleWindowResize() {
+    // Debounce the resize event to prevent excessive redraws
+    if (window.resizeTimeout) {
+        clearTimeout(window.resizeTimeout);
+    }
+
+    window.resizeTimeout = setTimeout(() => {
+        // If chart exists and we're on the custom analytics tab, update it
+        if (customAnalyticsChart && document.getElementById('custom-analytics').classList.contains('active')) {
+            customAnalyticsChart.resize();
+            customAnalyticsChart.update();
+        }
+    }, 250);
+}
+
+// Initialize all custom analytics components
+function initializeCustomAnalytics() {
     // Set default date range (last 30 days)
     initializeDateRange();
 
@@ -48,6 +67,23 @@ function initializeAnalytics() {
 
     // Initialize data labels toggle
     initializeDataLabelsToggle();
+}
+
+// Initialize date range selectors
+function initializeDateRange() {
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+
+    // Set default date range (last 30 days)
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
+    startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+    endDateInput.value = today.toISOString().split('T')[0];
+
+    customAnalyticsState.startDate = thirtyDaysAgo;
+    customAnalyticsState.endDate = today;
 }
 
 // Initialize hour selectors
@@ -71,52 +107,35 @@ function initializeHourSelectors() {
     }
 
     // Set default values
-    startHourSelect.value = analyticsState.startHour;
-    endHourSelect.value = analyticsState.endHour;
-}
-
-// Initialize date range selectors
-function initializeDateRange() {
-    const startDateInput = document.getElementById('startDate');
-    const endDateInput = document.getElementById('endDate');
-
-    // Set default date range (last 30 days)
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-
-    startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
-    endDateInput.value = today.toISOString().split('T')[0];
-
-    analyticsState.startDate = thirtyDaysAgo;
-    analyticsState.endDate = today;
+    startHourSelect.value = customAnalyticsState.startHour;
+    endHourSelect.value = customAnalyticsState.endHour;
 }
 
 // Initialize event listeners
 function initializeEventListeners() {
     // Date range selectors
     document.getElementById('startDate').addEventListener('change', (e) => {
-        analyticsState.startDate = new Date(e.target.value);
+        customAnalyticsState.startDate = new Date(e.target.value);
     });
 
     document.getElementById('endDate').addEventListener('change', (e) => {
-        analyticsState.endDate = new Date(e.target.value);
+        customAnalyticsState.endDate = new Date(e.target.value);
     });
 
     // Period radio buttons
     document.querySelectorAll('input[name="period"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
-            analyticsState.period = e.target.value;
+            customAnalyticsState.period = e.target.value;
         });
     });
 
     // Hour range selectors
     document.getElementById('startHour').addEventListener('change', (e) => {
-        analyticsState.startHour = e.target.value;
+        customAnalyticsState.startHour = e.target.value;
     });
 
     document.getElementById('endHour').addEventListener('change', (e) => {
-        analyticsState.endHour = e.target.value;
+        customAnalyticsState.endHour = e.target.value;
     });
 
     // Day checkboxes
@@ -165,13 +184,13 @@ function initializeEventListeners() {
 
 // Update selected days in state
 function updateSelectedDays() {
-    analyticsState.days = Array.from(document.querySelectorAll('input[name="day"]:checked'))
+    customAnalyticsState.days = Array.from(document.querySelectorAll('input[name="day"]:checked'))
         .map(checkbox => checkbox.value);
 }
 
 // Update selected KPIs in state
 function updateSelectedKPIs() {
-    analyticsState.selectedKPIs = Array.from(document.querySelectorAll('input[name="kpi"]:checked'))
+    customAnalyticsState.selectedKPIs = Array.from(document.querySelectorAll('input[name="kpi"]:checked'))
         .map(checkbox => checkbox.value);
 }
 
@@ -181,7 +200,7 @@ function initializeDataLabelsToggle() {
     const status = document.getElementById('dataLabelsStatus');
 
     toggle.addEventListener('change', () => {
-        analyticsState.showDataLabels = toggle.checked;
+        customAnalyticsState.showDataLabels = toggle.checked;
         status.textContent = toggle.checked ? 'Show Data Labels' : 'Hide Data Labels';
     });
 }
@@ -189,7 +208,7 @@ function initializeDataLabelsToggle() {
 // Generate chart based on selected options
 function generateChart() {
     // Check if at least one KPI is selected
-    if (analyticsState.selectedKPIs.length === 0) {
+    if (customAnalyticsState.selectedKPIs.length === 0) {
         alert('Please select at least one KPI to display');
         return;
     }
@@ -201,8 +220,8 @@ function generateChart() {
     createChart();
 
     // Show chart container and hide no-data message
-    document.querySelector('.chart-container').style.display = 'block';
-    document.querySelector('.no-data-message').style.display = 'none';
+    document.querySelector('#custom-analytics .chart-container').style.display = 'block';
+    document.querySelector('#custom-analytics .no-data-message').style.display = 'none';
 
     // Add download buttons
     if (typeof addDownloadButtons === 'function') {
@@ -213,9 +232,8 @@ function generateChart() {
 // Prepare chart data based on selected options
 function prepareChartData() {
     let data = [];
-    let labels = [];
 
-    switch (analyticsState.period) {
+    switch (customAnalyticsState.period) {
         case 'hours':
             data = prepareHourlyData();
             break;
@@ -230,7 +248,7 @@ function prepareChartData() {
             break;
     }
 
-    analyticsState.chartData = data;
+    customAnalyticsState.chartData = data;
 }
 
 // Prepare hourly data
@@ -243,11 +261,11 @@ function prepareHourlyData() {
         const dayName = getDayName(date.getDay()).toLowerCase();
         const hourStr = date.getHours().toString().padStart(2, '0') + ':00';
 
-        return date >= analyticsState.startDate &&
-               date <= analyticsState.endDate &&
-               analyticsState.days.includes(dayName) &&
-               hourStr >= analyticsState.startHour &&
-               hourStr <= analyticsState.endHour;
+        return date >= customAnalyticsState.startDate &&
+               date <= customAnalyticsState.endDate &&
+               customAnalyticsState.days.includes(dayName) &&
+               hourStr >= customAnalyticsState.startHour &&
+               hourStr <= customAnalyticsState.endHour;
     });
 
     // Sort by timestamp
@@ -263,9 +281,9 @@ function prepareDailyData() {
         const date = new Date(day.date);
         const dayName = getDayName(date.getDay()).toLowerCase();
 
-        return date >= analyticsState.startDate &&
-               date <= analyticsState.endDate &&
-               analyticsState.days.includes(dayName);
+        return date >= customAnalyticsState.startDate &&
+               date <= customAnalyticsState.endDate &&
+               customAnalyticsState.days.includes(dayName);
     });
 
     // Sort by date
@@ -284,9 +302,9 @@ function prepareWeeklyData() {
         const dayName = getDayName(date.getDay()).toLowerCase();
 
         // Skip if outside date range or day not selected
-        if (date < analyticsState.startDate ||
-            date > analyticsState.endDate ||
-            !analyticsState.days.includes(dayName)) return;
+        if (date < customAnalyticsState.startDate ||
+            date > customAnalyticsState.endDate ||
+            !customAnalyticsState.days.includes(dayName)) return;
 
         // Get week number and year
         const weekYear = getWeekYear(date);
@@ -354,9 +372,9 @@ function prepareMonthlyData() {
         const dayName = getDayName(date.getDay()).toLowerCase();
 
         // Skip if outside date range or day not selected
-        if (date < analyticsState.startDate ||
-            date > analyticsState.endDate ||
-            !analyticsState.days.includes(dayName)) return;
+        if (date < customAnalyticsState.startDate ||
+            date > customAnalyticsState.endDate ||
+            !customAnalyticsState.days.includes(dayName)) return;
 
         // Get month and year
         const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
@@ -416,8 +434,8 @@ function createChart() {
     const ctx = document.getElementById('analyticsChart').getContext('2d');
 
     // Destroy existing chart if it exists
-    if (analyticsChart) {
-        analyticsChart.destroy();
+    if (customAnalyticsChart) {
+        customAnalyticsChart.destroy();
     }
 
     // Prepare datasets
@@ -446,10 +464,10 @@ function createChart() {
     const barKPIs = ['visitorsIn', 'passersby', 'visitorsOut', 'menIn', 'menOut', 'womenIn', 'womenOut', 'groupIn', 'groupOut'];
 
     barKPIs.forEach(kpi => {
-        if (analyticsState.selectedKPIs.includes(kpi)) {
+        if (customAnalyticsState.selectedKPIs.includes(kpi)) {
             barDatasets.push({
                 label: getKPILabel(kpi),
-                data: analyticsState.chartData.map(item => item[kpi] || 0),
+                data: customAnalyticsState.chartData.map(item => item[kpi] || 0),
                 backgroundColor: colors[kpi].bg,
                 borderColor: colors[kpi].border,
                 borderWidth: 1,
@@ -457,15 +475,20 @@ function createChart() {
                 yAxisID: 'y',
                 type: 'bar',
                 datalabels: {
-                    display: analyticsState.showDataLabels,
+                    display: function(context) {
+                        // Hide data labels on small screens regardless of user preference
+                        if (window.innerWidth < 576) return false;
+                        // Otherwise respect user preference but hide zero values
+                        return customAnalyticsState.showDataLabels && context.dataset.data[context.dataIndex] > 0;
+                    },
                     align: 'top',
                     anchor: 'end',
                     formatter: value => value > 0 ? Math.round(value).toLocaleString() : '',
                     font: {
                         weight: 'bold',
-                        size: 11
+                        size: window.innerWidth < 768 ? 9 : 11
                     },
-                    padding: 6,
+                    padding: window.innerWidth < 768 ? 3 : 6,
                     color: colors[kpi].border
                 }
             });
@@ -476,10 +499,10 @@ function createChart() {
     const lineKPIs = ['captureRate', 'conversionRate', 'dwellTime', 'weather'];
 
     lineKPIs.forEach(kpi => {
-        if (analyticsState.selectedKPIs.includes(kpi)) {
+        if (customAnalyticsState.selectedKPIs.includes(kpi)) {
             lineDatasets.push({
                 label: getKPILabel(kpi),
-                data: analyticsState.chartData.map(item => item[kpi] || 0),
+                data: customAnalyticsState.chartData.map(item => item[kpi] || 0),
                 backgroundColor: colors[kpi].bg,
                 borderColor: colors[kpi].border,
                 borderWidth: 2,
@@ -488,7 +511,12 @@ function createChart() {
                 yAxisID: kpi === 'dwellTime' ? 'y2' : (kpi === 'weather' ? 'y3' : 'y1'),
                 type: 'line',
                 datalabels: {
-                    display: analyticsState.showDataLabels,
+                    display: function(context) {
+                        // Hide data labels on small screens regardless of user preference
+                        if (window.innerWidth < 576) return false;
+                        // Otherwise respect user preference but hide zero values
+                        return customAnalyticsState.showDataLabels && context.dataset.data[context.dataIndex] > 0;
+                    },
                     align: 'top',
                     anchor: 'end',
                     formatter: value => {
@@ -500,9 +528,9 @@ function createChart() {
                     },
                     font: {
                         weight: 'bold',
-                        size: 11
+                        size: window.innerWidth < 768 ? 9 : 11
                     },
-                    padding: 6,
+                    padding: window.innerWidth < 768 ? 3 : 6,
                     color: colors[kpi].border
                 }
             });
@@ -513,8 +541,8 @@ function createChart() {
     datasets.push(...barDatasets, ...lineDatasets);
 
     // Prepare labels based on period
-    const labels = analyticsState.chartData.map(item => {
-        switch (analyticsState.period) {
+    const labels = customAnalyticsState.chartData.map(item => {
+        switch (customAnalyticsState.period) {
             case 'hours':
                 return new Date(item.timestamp);
             case 'days':
@@ -528,8 +556,8 @@ function createChart() {
         }
     });
 
-    // Create chart
-    analyticsChart = new Chart(ctx, {
+    // Create chart with gradient effects for a more beautiful user experience
+    customAnalyticsChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -542,14 +570,28 @@ function createChart() {
                 mode: 'index',
                 intersect: false,
             },
+            // Responsive configuration
+            onResize: function(chart, size) {
+                // Adjust font sizes based on screen width
+                const fontSize = size.width < 768 ? (size.width < 576 ? 10 : 12) : 14;
+                chart.options.scales.x.ticks.font.size = fontSize;
+                chart.options.scales.y.ticks.font.size = fontSize;
+
+                // Adjust padding and rotation for small screens
+                if (size.width < 576) {
+                    chart.options.scales.x.ticks.maxRotation = 90;
+                    chart.options.layout.padding = 5;
+                } else {
+                    chart.options.scales.x.ticks.maxRotation = 45;
+                    chart.options.layout.padding = 10;
+                }
+            },
+            layout: {
+                padding: 10
+            },
             plugins: {
                 legend: {
-                    position: 'top',
-                    labels: {
-                        boxWidth: 12,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
+                    display: false, // Remove legends as per user preference
                 },
                 tooltip: {
                     callbacks: {
@@ -571,31 +613,36 @@ function createChart() {
                     }
                 },
                 title: {
-                    display: true,
-                    text: getChartTitle(),
-                    font: {
-                        size: 16
-                    }
+                    display: false, // Don't show titles as per user preference
                 }
             },
             scales: {
                 x: {
-                    type: analyticsState.period === 'weeks' ? 'category' : 'time',
+                    type: customAnalyticsState.period === 'weeks' ? 'category' : 'time',
                     time: {
                         unit: getTimeUnit(),
                         displayFormats: {
                             hour: 'HH:mm',
-                            day: 'EEE dd MMM yyyy',
+                            day: 'ddd dd MMM yyyy', // Format as per user preference
                             month: 'MMM yyyy'
                         }
                     },
                     title: {
                         display: true,
-                        text: getXAxisTitle()
+                        text: getXAxisTitle(),
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     },
                     ticks: {
                         maxRotation: 45,
-                        minRotation: 45
+                        minRotation: 45,
+                        font: {
+                            size: 14
+                        },
+                        autoSkip: true,
+                        maxTicksLimit: window.innerWidth < 768 ? 8 : 12
                     }
                 },
                 y: {
@@ -603,13 +650,33 @@ function createChart() {
                     position: 'left',
                     title: {
                         display: true,
-                        text: 'Count',
-                        color: 'rgb(45, 107, 34)'
+                        text: 'Visitors',
+                        color: 'rgb(45, 107, 34)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     },
                     ticks: {
                         precision: 0,
                         callback: function(value) {
                             return Math.round(value).toLocaleString();
+                        },
+                        font: {
+                            size: 14
+                        },
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 10
+                    },
+                    // Adapt to available space
+                    adapters: {
+                        tick: {
+                            format: function(value) {
+                                // For small screens, abbreviate large numbers
+                                if (window.innerWidth < 576 && value >= 1000) {
+                                    return (value / 1000).toFixed(0) + 'k';
+                                }
+                                return value.toLocaleString();
+                            }
                         }
                     }
                 },
@@ -619,7 +686,11 @@ function createChart() {
                     title: {
                         display: true,
                         text: 'Percentage (%)',
-                        color: 'rgb(243, 151, 0)'
+                        color: 'rgb(243, 151, 0)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     },
                     grid: {
                         drawOnChartArea: false
@@ -627,7 +698,11 @@ function createChart() {
                     ticks: {
                         callback: function(value) {
                             return value.toFixed(2) + '%';
-                        }
+                        },
+                        font: {
+                            size: 14
+                        },
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 10
                     },
                     display: lineDatasets.some(d => d.yAxisID === 'y1')
                 },
@@ -637,13 +712,21 @@ function createChart() {
                     title: {
                         display: true,
                         text: 'Dwell Time (seconds)',
-                        color: 'rgb(175, 82, 222)'
+                        color: 'rgb(175, 82, 222)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     },
                     grid: {
                         drawOnChartArea: false
                     },
                     ticks: {
-                        precision: 0
+                        precision: 0,
+                        font: {
+                            size: 14
+                        },
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 10
                     },
                     display: lineDatasets.some(d => d.yAxisID === 'y2')
                 },
@@ -653,19 +736,45 @@ function createChart() {
                     title: {
                         display: true,
                         text: 'Weather',
-                        color: 'rgb(90, 200, 250)'
+                        color: 'rgb(90, 200, 250)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     },
                     grid: {
                         drawOnChartArea: false
                     },
                     ticks: {
-                        precision: 0
+                        precision: 0,
+                        font: {
+                            size: 14
+                        },
+                        maxTicksLimit: window.innerWidth < 768 ? 6 : 10
                     },
                     display: lineDatasets.some(d => d.yAxisID === 'y3')
                 }
             }
         }
     });
+
+    // Apply gradient effects to bar datasets for a more beautiful user experience
+    customAnalyticsChart.data.datasets.forEach((dataset, index) => {
+        if (dataset.type === 'bar') {
+            const ctx = customAnalyticsChart.ctx;
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+
+            // Create gradient effect
+            const color = dataset.backgroundColor;
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, color.replace('0.7', '0.3'));
+
+            dataset.backgroundColor = gradient;
+        }
+    });
+
+    // Update the chart
+    customAnalyticsChart.update();
 }
 
 // Helper function to get day name from day index
@@ -712,17 +821,9 @@ function getKPILabel(kpi) {
     return labels[kpi] || kpi;
 }
 
-// Helper function to get chart title
-function getChartTitle() {
-    const periodText = analyticsState.period.charAt(0).toUpperCase() + analyticsState.period.slice(1);
-    const hourRangeText = `${analyticsState.startHour} - ${analyticsState.endHour}`;
-
-    return `${periodText} Analysis (${hourRangeText})`;
-}
-
 // Helper function to get X-axis title
 function getXAxisTitle() {
-    switch (analyticsState.period) {
+    switch (customAnalyticsState.period) {
         case 'hours':
             return 'Hour';
         case 'days':
@@ -738,7 +839,7 @@ function getXAxisTitle() {
 
 // Helper function to get time unit for X-axis
 function getTimeUnit() {
-    switch (analyticsState.period) {
+    switch (customAnalyticsState.period) {
         case 'hours':
             return 'hour';
         case 'days':

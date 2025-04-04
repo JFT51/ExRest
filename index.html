@@ -457,6 +457,201 @@
             </div>
         </div>
         <!-- Daily Benchmark tab content removed -->
+
+        <div id="custom-analytics" class="tab-content">
+            <p class="subtitle">Select options to create your custom analytics view</p>
+
+            <div class="analytics-container">
+                <div class="options-panel">
+                    <div class="option-section generate-button-section">
+                        <button id="generateChart" class="generate-button">Generate Chart</button>
+                    </div>
+
+                    <div class="option-section">
+                        <h2>Date Range</h2>
+                        <div class="date-range">
+                            <div class="date-input">
+                                <label for="startDate">Start Date:</label>
+                                <input type="date" id="startDate">
+                            </div>
+                            <div class="date-input">
+                                <label for="endDate">End Date:</label>
+                                <input type="date" id="endDate">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h2>Time Period</h2>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="period" value="hours">
+                                <span>Hours</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="period" value="days" checked>
+                                <span>Days</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="period" value="weeks">
+                                <span>Weeks</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="period" value="months">
+                                <span>Months</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h2>Hour Range</h2>
+                        <div class="time-range">
+                            <div class="time-input">
+                                <label for="startHour">Start Hour:</label>
+                                <select id="startHour">
+                                    <!-- Options will be added by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="time-input">
+                                <label for="endHour">End Hour:</label>
+                                <select id="endHour">
+                                    <!-- Options will be added by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h2>Day Selection</h2>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="day" value="monday" checked>
+                                <span>Monday</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="day" value="tuesday" checked>
+                                <span>Tuesday</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="day" value="wednesday" checked>
+                                <span>Wednesday</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="day" value="thursday" checked>
+                                <span>Thursday</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="day" value="friday" checked>
+                                <span>Friday</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="day" value="saturday" checked>
+                                <span>Saturday</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="day" value="sunday" checked>
+                                <span>Sunday</span>
+                            </label>
+                        </div>
+                        <div class="select-buttons">
+                            <button id="selectAllDays">Select All</button>
+                            <button id="deselectAllDays">Deselect All</button>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h2>KPI Selection</h2>
+                        <div class="checkbox-group kpi-group">
+                            <div class="kpi-column">
+                                <h3>Bar Charts</h3>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="visitorsIn" checked>
+                                    <span>Visitors</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="passersby">
+                                    <span>Passersby</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="visitorsOut">
+                                    <span>Visitors Leaving</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="menIn">
+                                    <span>Men Entering</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="menOut">
+                                    <span>Men Leaving</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="womenIn">
+                                    <span>Women Entering</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="womenOut">
+                                    <span>Women Leaving</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="groupIn">
+                                    <span>Group Entering</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="groupOut">
+                                    <span>Group Leaving</span>
+                                </label>
+                            </div>
+                            <div class="kpi-column">
+                                <h3>Line Charts</h3>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="captureRate">
+                                    <span>Capture Rate</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="conversionRate">
+                                    <span>Conversion Rate</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="dwellTime">
+                                    <span>Dwell Time</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="kpi" value="weather">
+                                    <span>Weather</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="select-buttons">
+                            <button id="selectAllKPIs">Select All</button>
+                            <button id="deselectAllKPIs">Deselect All</button>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h2>Data Labels</h2>
+                        <div class="slider-container">
+                            <label class="switch">
+                                <input type="checkbox" id="dataLabelsToggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span id="dataLabelsStatus">Show Data Labels</span>
+                        </div>
+                    </div>
+
+                    <!-- Generate Chart button moved to the top -->
+                </div>
+
+                <div class="chart-panel">
+                    <div class="chart-container">
+                        <canvas id="analyticsChart"></canvas>
+                    </div>
+                    <div class="no-data-message">
+                        <i class="fas fa-chart-line"></i>
+                        <p>Select options and click "Generate Chart" to view data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- First load utils since other files depend on its helper functions -->
@@ -479,6 +674,9 @@
     <script src="display.js"></script>
     <script src="navigation.js"></script>
     <script src="benchmark.js"></script>
+
+    <!-- Load custom analytics script (separate to avoid conflicts) -->
+    <script src="customAnalytics.js"></script>
 
     <!-- Load app initialization last -->
     <script src="app.js"></script>
