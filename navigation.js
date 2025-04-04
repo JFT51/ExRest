@@ -1,29 +1,102 @@
-document.getElementById('hourDataBtn').addEventListener('click', () => switchView('hour'));
-document.getElementById('dayDataBtn').addEventListener('click', () => switchView('day'));
-
-function switchView(view) {
-    const hourContainer = document.getElementById('hourDataContainer');
-    const dayContainer = document.getElementById('dayDataContainer');
+document.addEventListener('DOMContentLoaded', () => {
+    // Add event listeners to data view buttons with toggle functionality
     const hourBtn = document.getElementById('hourDataBtn');
     const dayBtn = document.getElementById('dayDataBtn');
+    const weekBtn = document.getElementById('weekDataBtn');
 
-    if (view === 'hour') {
-        hourContainer.classList.remove('hidden');
-        dayContainer.classList.add('hidden');
-        hourBtn.classList.add('active');
-        dayBtn.classList.remove('active');
-    } else {
-        hourContainer.classList.add('hidden');
-        dayContainer.classList.remove('hidden');
-        hourBtn.classList.remove('active');
-        dayBtn.classList.add('active');
+    hourBtn.addEventListener('click', () => toggleView('hour'));
+    dayBtn.addEventListener('click', () => toggleView('day'));
+    weekBtn.addEventListener('click', () => toggleView('week'));
+
+    // No default view - all containers remain hidden until a button is clicked
+
+    // Add scroll event listener for date-picker-sticky transparency effect
+    window.addEventListener('scroll', handleDatePickerScroll);
+    // Initial call to set the correct state
+    handleDatePickerScroll();
+});
+
+function toggleView(view) {
+    // Get all containers and buttons
+    const hourContainer = document.getElementById('hourDataContainer');
+    const dayContainer = document.getElementById('dayDataContainer');
+    const weekContainer = document.getElementById('weekDataContainer');
+    const messageContainer = document.getElementById('noDataSelectedMessage');
+    const hourBtn = document.getElementById('hourDataBtn');
+    const dayBtn = document.getElementById('dayDataBtn');
+    const weekBtn = document.getElementById('weekDataBtn');
+
+    // Check if the clicked button is already active (toggle off)
+    let isTogglingOff = false;
+
+    if (view === 'hour' && hourBtn.classList.contains('active')) {
+        isTogglingOff = true;
+    } else if (view === 'day' && dayBtn.classList.contains('active')) {
+        isTogglingOff = true;
+    } else if (view === 'week' && weekBtn.classList.contains('active')) {
+        isTogglingOff = true;
     }
+
+    // Hide all containers first
+    hourContainer.classList.add('hidden');
+    dayContainer.classList.add('hidden');
+    weekContainer.classList.add('hidden');
+
+    // Remove active class from all buttons
+    hourBtn.classList.remove('active');
+    dayBtn.classList.remove('active');
+    weekBtn.classList.remove('active');
+
+    // If not toggling off, show the selected container and activate the button
+    if (!isTogglingOff) {
+        if (view === 'hour') {
+            hourContainer.classList.remove('hidden');
+            hourBtn.classList.add('active');
+            messageContainer.classList.add('hidden');
+        } else if (view === 'day') {
+            dayContainer.classList.remove('hidden');
+            dayBtn.classList.add('active');
+            messageContainer.classList.add('hidden');
+        } else if (view === 'week') {
+            weekContainer.classList.remove('hidden');
+            weekBtn.classList.add('active');
+            messageContainer.classList.add('hidden');
+        }
+    } else {
+        // If toggling off, show the message container
+        messageContainer.classList.remove('hidden');
+    }
+
+    // Trigger a resize event to ensure charts are properly sized
+    window.dispatchEvent(new Event('resize'));
+
+    console.log(`View ${isTogglingOff ? 'toggled off' : 'switched to'}: ${view}`);
+}
+
+function switchView(view) {
+    // Keep the old function for backward compatibility
+    toggleView(view);
 }
 
 function initializeMonthSelector() {
     document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
     document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
     updateMonthDisplay();
+}
+
+// Function to handle date picker transparency on scroll
+function handleDatePickerScroll() {
+    const scrollPosition = window.scrollY;
+    const datePickerContainers = document.querySelectorAll('.date-picker-container');
+
+    datePickerContainers.forEach(container => {
+        // Add 'scrolled' class when scrolled down more than 50px
+        if (scrollPosition > 50) {
+            container.classList.add('scrolled');
+        } else {
+            container.classList.remove('scrolled');
+        }
+    });
 }
 
 function changeMonth(delta) {

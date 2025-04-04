@@ -11,7 +11,7 @@ function parseDate(dateStr) {
         const [date, time] = dateStr.split(' ');
         const [day, month, year] = date.split('/');
         const [hour, minute] = time.split(':');
-        
+
         // Parse components as integers with radix 10
         const parsedDay = parseInt(day, 10);
         const parsedMonth = parseInt(month, 10) - 1; // Months are 0-based
@@ -35,7 +35,7 @@ function parseDate(dateStr) {
         }
 
         const parsedDate = new Date(parsedYear, parsedMonth, parsedDay, parsedHour, parsedMinute);
-        
+
         // Validate the resulting date
         if (isNaN(parsedDate.getTime())) {
             console.error('Invalid date result:', dateStr);
@@ -55,10 +55,10 @@ function isSameDay(date1, date2) {
 
 function isOpeningHour(date) {
     if (!date) return false;
-    
+
     const day = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const hour = date.getHours();
-    
+
     const openingHours = {
         0: { start: 8, end: 16 }, // Sunday
         1: { start: 7, end: 20 }, // Monday
@@ -68,13 +68,21 @@ function isOpeningHour(date) {
         5: { start: 7, end: 20 }, // Friday
         6: { start: 8, end: 20 }  // Saturday
     };
-    
+
     const hours = openingHours[day];
     return hour >= hours.start && hour < hours.end;
 }
 
+// Format date for general use
 function formatDate(date) {
-    return new Date(date).toLocaleDateString('en-US', {
+    if (!date) return 'Invalid Date';
+
+    // Ensure we have a Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+
+    if (isNaN(dateObj.getTime())) return 'Invalid Date';
+
+    return dateObj.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -82,15 +90,44 @@ function formatDate(date) {
     });
 }
 
+// Format timestamp specifically for hour data display
+function formatTimestamp(date) {
+    if (!date) return 'Invalid Date';
+
+    // Ensure we have a Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+
+    if (isNaN(dateObj.getTime())) return 'Invalid Date';
+
+    // Format as "DD/MM/YYYY HH:MM"
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = dateObj.getFullYear();
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
 function formatDateShort(date) {
-    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    if (!date) {
         return 'Invalid Date';
     }
-    return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
+
+    // Ensure we have a Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+
+    if (isNaN(dateObj.getTime())) {
+        return 'Invalid Date';
+    }
+
+    // Format as "DD DDD MMM YYYY" (e.g., "Wed 09 Oct 2024")
+    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' }); // DDD
+    const dayOfMonth = dateObj.toLocaleDateString('en-US', { day: '2-digit' }); // DD
+    const month = dateObj.toLocaleDateString('en-US', { month: 'short' }); // MMM
+    const year = dateObj.toLocaleDateString('en-US', { year: 'numeric' }); // YYYY
+
+    return `${dayOfWeek} ${dayOfMonth} ${month} ${year}`;
 }
 
 function formatTickerDate(date) {
@@ -131,7 +168,7 @@ function getWeatherEmoji(code) {
         96: '⛈️', // Thunderstorm with slight hail
         99: '🌩️'  // Thunderstorm with heavy hail
     };
-    
+
     // Return emoji or question mark if code not found
     return weatherMap[code] || '❓';
 }
@@ -159,14 +196,14 @@ const getWeekday = (date) => {
 const calculateDayAverages = (data) => {
     const totals = {};
     const counts = {};
-    
+
     data.forEach(day => {
         const weekday = getWeekday(day.date);
         if (!totals[weekday]) {
             totals[weekday] = { visitors: 0, passersby: 0, captureRate: 0 };
             counts[weekday] = 0;
         }
-        
+
         totals[weekday].visitors += day.visitors;
         totals[weekday].passersby += day.passersby;
         totals[weekday].captureRate += day.captureRate;

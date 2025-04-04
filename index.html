@@ -13,11 +13,14 @@
 </head>
 <body>
     <div class="fixed-banner">
-        <div class="site-logo">Restaurant Analytics</div>
+        <div class="site-logo">
+            <img src="https://raw.githubusercontent.com/JFT51/ExRest/refs/heads/main/laqrotte.svg" alt="La Qrotte Logo" class="company-logo">
+        </div>
         <nav class="tab-menu">
             <button class="tab-button active" data-tab="overview">Overview</button>
             <button class="tab-button" data-tab="benchmark">Hourly Benchmark</button>
-            <button class="tab-button" data-tab="daily-benchmark">Daily Benchmark</button>
+            <button class="tab-button" data-tab="week-data">Week Data</button>
+            <button class="tab-button" data-tab="custom-analytics">Custom Analytics</button>
         </nav>
     </div>
 
@@ -73,22 +76,37 @@
                 <button id="nextMonth">→</button>
             </div>
 
-            <div class="chart-section">
+            <div id="monthly" class="chart-section">
                 <div class="chart-container">
                     <canvas id="monthlyChart"></canvas>
                 </div>
                 <div class="dataset-selector">
                     <h3>Datasets</h3>
                     <div class="dataset-option customers">
-                        <input type="checkbox" id="showCustomers" checked>
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="showCustomers" checked>
+                            <button class="toggle-labels" data-dataset="customers" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
                         <label for="showCustomers">Daily Customers</label>
                     </div>
                     <div class="dataset-option passersby">
-                        <input type="checkbox" id="showPassersby" checked>
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="showPassersby" checked>
+                            <button class="toggle-labels" data-dataset="passersby" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
                         <label for="showPassersby">Passersby</label>
                     </div>
                     <div class="dataset-option capture-rate">
-                        <input type="checkbox" id="showCaptureRate" checked>
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="showCaptureRate" checked>
+                            <button class="toggle-labels" data-dataset="capture-rate" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
                         <label for="showCaptureRate">Capture Rate</label>
                     </div>
                 </div>
@@ -97,10 +115,14 @@
             <nav>
                 <button id="hourDataBtn">Hour Data</button>
                 <button id="dayDataBtn">Day Data</button>
-                <button id="weekDataBtn" class="active">Week Data</button>
+                <button id="weekDataBtn">Week Data</button>
             </nav>
 
-            <div id="hourDataContainer" class="data-container">
+            <div id="noDataSelectedMessage" class="message-container">
+                <p>Select a data view above to display information</p>
+            </div>
+
+            <div id="hourDataContainer" class="data-container hidden">
                 <h2>Hour Data</h2>
                 <div class="table-wrapper">
                     <table id="hourDataTable">
@@ -128,7 +150,7 @@
                 </div>
             </div>
 
-            <div id="weekDataContainer" class="data-container">
+            <div id="weekDataContainer" class="data-container hidden">
                 <h2>Week Data</h2>
                 <div class="table-wrapper">
                     <table id="weekDataTable">
@@ -172,13 +194,14 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="benchmark-table-container">
                 <table class="benchmark-comparison">
                     <thead>
                         <tr>
                             <th>Date</th>
                             <th>Customers</th>
+                            <th>Passersby</th>
                             <th>Capture Rate</th>
                             <th>Gender Distribution</th>
                             <th>Dwell Time</th>
@@ -188,12 +211,12 @@
                     </thead>
                     <tbody id="benchmarkTableBody">
                         <tr>
-                            <td colspan="7">Select a date to view data</td>
+                            <td colspan="8">Select a date to view data</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="capture-rate-cards">
                 <div class="capture-card">
                     <h3><i class="fas fa-sun-rise"></i> Morning</h3>
@@ -232,7 +255,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="chart-section">
                 <div class="chart-container">
                     <canvas id="benchmarkHourlyChart"></canvas>
@@ -297,25 +320,25 @@
             </div>
         </div>
 
-        <div id="daily-benchmark" class="tab-content">
+        <div id="week-data" class="tab-content">
             <div class="date-picker-sticky">
                 <div class="date-picker-container">
-                    <label for="dailyBenchmarkDate">Select Week:</label>
-                    <input type="date" id="dailyBenchmarkDate">
+                    <label for="weekDataDate">Select Week:</label>
+                    <input type="date" id="weekDataDate">
                     <div class="benchmark-date-container">
                         <div class="benchmark-toggle">
-                            <input type="checkbox" id="enableDailyBenchmark" name="benchmarkType">
+                            <input type="checkbox" id="enableWeekDataBenchmark" name="benchmarkType">
                         </div>
-                        <label for="dailyBenchmarkCompareDate">Compare with:</label>
-                        <input type="date" id="dailyBenchmarkCompareDate" disabled>
+                        <label for="weekDataCompareDate">Compare with:</label>
+                        <input type="date" id="weekDataCompareDate" disabled>
                         <div class="benchmark-toggle average-toggle">
-                            <input type="checkbox" id="enableDailyAverageBenchmark" name="benchmarkType">
-                            <label for="enableDailyAverageBenchmark">Compare with Average</label>
+                            <input type="checkbox" id="enableWeekDataAverageBenchmark" name="benchmarkType">
+                            <label for="enableWeekDataAverageBenchmark">Compare with Average</label>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="benchmark-table-container">
                 <table class="benchmark-comparison">
                     <thead>
@@ -323,83 +346,140 @@
                             <th>Week</th>
                             <th>Total Visitors</th>
                             <th>Daily Average</th>
+                            <th>Total Passersby</th>
                             <th>Capture Rate</th>
                             <th>Gender Distribution</th>
                             <th>Avg. Dwell Time</th>
                             <th>Data Accuracy</th>
-                            <th>Weather Impact</th>
                         </tr>
                     </thead>
-                    <tbody id="dailyBenchmarkTableBody">
+                    <tbody id="weekDataTableBody">
                         <tr>
                             <td colspan="8">Select a week to view data</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="capture-rate-cards">
                 <div class="capture-card">
-                    <h3><i class="fas fa-calendar-day"></i> Monday-Tuesday</h3>
-                    <p>Start of Week</p>
-                    <div class="capture-value" id="startWeekCaptureRate">0.0%</div>
+                    <h3><i class="fas fa-calendar-day"></i> Weekdays</h3>
+                    <p>Monday - Friday</p>
+                    <div class="capture-value" id="weekdaysCaptureRate">0.0%</div>
                 </div>
                 <div class="capture-card">
-                    <h3><i class="fas fa-calendar-week"></i> Wednesday-Thursday</h3>
-                    <p>Mid Week</p>
-                    <div class="capture-value" id="midWeekCaptureRate">0.0%</div>
-                </div>
-                <div class="capture-card">
-                    <h3><i class="fas fa-calendar-check"></i> Friday-Sunday</h3>
-                    <p>Weekend</p>
+                    <h3><i class="fas fa-calendar-week"></i> Weekend</h3>
+                    <p>Saturday - Sunday</p>
                     <div class="capture-value" id="weekendCaptureRate">0.0%</div>
                 </div>
+                <!-- Full Week capture rate card removed -->
                 <div class="capture-card">
-                    <h3><i class="fas fa-calendar-alt"></i> Custom Days</h3>
+                    <h3><i class="fas fa-cog"></i> Custom</h3>
                     <p id="customDaysLabel">Select days</p>
                     <div class="capture-value" id="customDaysCaptureRate">0.0%</div>
                 </div>
                 <div class="time-control-card">
                     <div class="time-controls">
                         <div class="weekday-group">
-                            <!-- Add checkboxes for each day of the week -->
-                            <label><input type="checkbox" value="1"> Mon</label>
-                            <label><input type="checkbox" value="2"> Tue</label>
-                            <label><input type="checkbox" value="3"> Wed</label>
-                            <label><input type="checkbox" value="4"> Thu</label>
-                            <label><input type="checkbox" value="5"> Fri</label>
-                            <label><input type="checkbox" value="6"> Sat</label>
-                            <label><input type="checkbox" value="0"> Sun</label>
+                            <label><input type="checkbox" value="1" class="weekday-checkbox"><span data-full="Monday" data-short="Mon">Monday</span></label>
+                            <label><input type="checkbox" value="2" class="weekday-checkbox"><span data-full="Tuesday" data-short="Tue">Tuesday</span></label>
+                            <label><input type="checkbox" value="3" class="weekday-checkbox"><span data-full="Wednesday" data-short="Wed">Wednesday</span></label>
+                            <label><input type="checkbox" value="4" class="weekday-checkbox"><span data-full="Thursday" data-short="Thu">Thursday</span></label>
+                            <label><input type="checkbox" value="5" class="weekday-checkbox"><span data-full="Friday" data-short="Fri">Friday</span></label>
+                            <label><input type="checkbox" value="6" class="weekday-checkbox"><span data-full="Saturday" data-short="Sat">Saturday</span></label>
+                            <label><input type="checkbox" value="0" class="weekday-checkbox"><span data-full="Sunday" data-short="Sun">Sunday</span></label>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="chart-section">
                 <div class="chart-container">
-                    <canvas id="dailyBenchmarkChart"></canvas>
+                    <canvas id="weekDataChart"></canvas>
                 </div>
                 <div class="dataset-selector">
                     <h3>Datasets</h3>
-                    <!-- Same structure as hourly benchmark but with different IDs -->
-                    <!-- ... copy dataset options with updated IDs ... -->
+                    <div class="dataset-option visitors">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="weekDataShowVisitors" checked>
+                            <button class="toggle-labels" data-dataset="visitors" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="weekDataShowVisitors">Visitors</label>
+                    </div>
+                    <div class="dataset-option passersby">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="weekDataShowPassersby">
+                            <button class="toggle-labels" data-dataset="passersby" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="weekDataShowPassersby">Passersby</label>
+                    </div>
+                    <div class="dataset-option capture-rate">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="weekDataShowCaptureRate" checked>
+                            <button class="toggle-labels" data-dataset="capture-rate" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="weekDataShowCaptureRate">Capture Rate</label>
+                    </div>
+                    <div class="dataset-option conversion">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="weekDataShowConversion">
+                            <button class="toggle-labels" data-dataset="conversion" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="weekDataShowConversion">Conversion</label>
+                    </div>
+                    <div class="dataset-option men">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="weekDataShowMen">
+                            <button class="toggle-labels" data-dataset="men" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="weekDataShowMen">Men</label>
+                    </div>
+                    <div class="dataset-option women">
+                        <div class="dataset-controls">
+                            <input type="checkbox" id="weekDataShowWomen">
+                            <button class="toggle-labels" data-dataset="women" title="Toggle data labels">
+                                <i class="fas fa-tag"></i>
+                            </button>
+                        </div>
+                        <label for="weekDataShowWomen">Women</label>
+                    </div>
                 </div>
             </div>
         </div>
+        <!-- Daily Benchmark tab content removed -->
     </div>
 
     <!-- First load utils since other files depend on its helper functions -->
     <script src="utils.js"></script>
-    
+
     <!-- Load core data handling next -->
     <script src="data.js"></script>
-    
+
+    <!-- Load chart utilities -->
+    <script src="chartUtils.js"></script>
+    <script src="download-buttons.js"></script>
+
+    <!-- Load individual chart modules -->
+    <script src="monthlyChart.js"></script>
+    <script src="benchmarkHourlyChart.js"></script>
+    <script src="weekDataChart.js"></script>
+    <script src="weekData.js"></script>
+
     <!-- Load UI components that depend on data -->
-    <script src="charts.js"></script>
     <script src="display.js"></script>
     <script src="navigation.js"></script>
     <script src="benchmark.js"></script>
-    
+
     <!-- Load app initialization last -->
     <script src="app.js"></script>
 </body>
