@@ -312,7 +312,7 @@ function createTableRow(dayData, date, isAverage = false, comparisonMetrics = nu
         dayData.temperature ? `${dayData.temperature}°C` : '',
         dayData.precipitation ? `${dayData.precipitation}mm` : '',
         dayData.windspeed ? `${dayData.windspeed}km/h` : ''
-    ].filter(Boolean).join(' ') || 'No weather data';
+    ].filter(Boolean).join(' ') || '';
 
     const averageInfo = isAverage && dayData.sampleSize
         ? `Average of ${dayData.sampleSize} ${date.toLocaleString('en-us', {weekday: 'long'})}s`
@@ -358,7 +358,7 @@ function createTableRow(dayData, date, isAverage = false, comparisonMetrics = nu
             <td ${createTooltip('Data Accuracy', d => parseFloat(d.dataAccuracy).toFixed(2) + '%')}${comparisonMetrics ? getCellColor(parseFloat(dayData.dataAccuracy), comparisonMetrics.dataAccuracy) : ''}>
                 ${parseFloat(dayData.dataAccuracy).toFixed(2)}%
             </td>
-            <td class="weather-info">${isAverage ? 'N/A' : weatherInfo}</td>
+            <td class="weather-info">${isAverage ? '' : weatherInfo}</td>
         </tr>
     `;
 }

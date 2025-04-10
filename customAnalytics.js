@@ -16,7 +16,7 @@ const customAnalyticsState = {
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
     selectedKPIs: ['visitorsIn'],
     showDataLabels: true,
-    chartData: null
+    chartData: [] // Initialize as empty array instead of null
 };
 
 // Initialize analytics when DOM is loaded
@@ -205,6 +205,34 @@ function initializeDataLabelsToggle() {
     });
 }
 
+// Show loading indicator
+function showLoadingIndicator() {
+    const loadingIndicator = document.getElementById('analyticsLoadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'flex';
+    }
+
+    // Hide chart container and no-data message
+    document.querySelector('#custom-analytics .chart-container').style.display = 'none';
+    document.querySelector('#custom-analytics .no-data-message').style.display = 'none';
+}
+
+// Hide loading indicator
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('analyticsLoadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+// Update progress text
+function updateProgressText(text) {
+    const progressText = document.querySelector('#analyticsLoadingIndicator .progress-text');
+    if (progressText) {
+        progressText.textContent = text;
+    }
+}
+
 // Generate chart based on selected options
 function generateChart() {
     // Check if at least one KPI is selected
@@ -213,232 +241,672 @@ function generateChart() {
         return;
     }
 
-    // Prepare data based on selected period
-    prepareChartData();
+    // Show loading indicator
+    showLoadingIndicator();
 
-    // Create or update chart
-    createChart();
+    // Use setTimeout to allow the loading indicator to render
+    setTimeout(() => {
+        try {
+            // Update progress text
+            updateProgressText('Preparing data based on selected period...');
 
-    // Show chart container and hide no-data message
-    document.querySelector('#custom-analytics .chart-container').style.display = 'block';
-    document.querySelector('#custom-analytics .no-data-message').style.display = 'none';
+            // Prepare data based on selected period
+            prepareChartData();
 
-    // Add download buttons
-    if (typeof addDownloadButtons === 'function') {
-        addDownloadButtons('analyticsChart');
-    }
+            // Update progress text
+            updateProgressText('Creating chart visualization...');
+
+            // Create or update chart
+            createChart();
+
+            // Show chart container and hide no-data message
+            document.querySelector('#custom-analytics .chart-container').style.display = 'block';
+            document.querySelector('#custom-analytics .no-data-message').style.display = 'none';
+
+            // Add download buttons
+            if (typeof addDownloadButtons === 'function') {
+                addDownloadButtons('analyticsChart');
+            }
+
+            // Hide loading indicator
+            hideLoadingIndicator();
+        } catch (error) {
+            console.error('Error generating chart:', error);
+            hideLoadingIndicator();
+            alert('An error occurred while generating the chart. Please try again.');
+        }
+    }, 100);
 }
 
 // Prepare chart data based on selected options
 function prepareChartData() {
     let data = [];
 
-    switch (customAnalyticsState.period) {
-        case 'hours':
-            data = prepareHourlyData();
-            break;
-        case 'days':
-            data = prepareDailyData();
-            break;
-        case 'weeks':
-            data = prepareWeeklyData();
-            break;
-        case 'months':
-            data = prepareMonthlyData();
-            break;
+    try {
+        switch (customAnalyticsState.period) {
+            case 'hours':
+                updateProgressText('Processing hourly data...');
+                data = prepareHourlyData();
+                break;
+            case 'days':
+                updateProgressText('Processing daily data...');
+                data = prepareDailyData();
+                break;
+            case 'weeks':
+                updateProgressText('Processing weekly data...');
+                data = prepareWeeklyData();
+                break;
+            case 'months':
+                updateProgressText('Processing monthly data...');
+                data = prepareMonthlyData();
+                break;
+        }
+
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+            console.warn('Data preparation did not return an array. Using empty array instead.');
+            data = [];
+        }
+    } catch (error) {
+        console.error('Error preparing chart data:', error);
+        data = [];
     }
 
+    updateProgressText('Finalizing data preparation...');
     customAnalyticsState.chartData = data;
 }
 
 // Prepare hourly data
 function prepareHourlyData() {
-    if (!window.dashboardState || !window.dashboardState.hourData) return [];
+    if (!window.dashboardState || !window.dashboardState.hourData) {
+        console.warn('No hour data available for hourly chart');
+        return [];
+    }
 
-    // Filter by date range, selected days and hour range
-    const filteredData = window.dashboardState.hourData.filter(hour => {
-        const date = new Date(hour.timestamp);
-        const dayName = getDayName(date.getDay()).toLowerCase();
-        const hourStr = date.getHours().toString().padStart(2, '0') + ':00';
+    console.log('Preparing hourly data...');
+    console.log('Date range:', customAnalyticsState.startDate, 'to', customAnalyticsState.endDate);
+    console.log('Hour range:', customAnalyticsState.startHour, 'to', customAnalyticsState.endHour);
+    console.log('Selected days:', customAnalyticsState.days);
+    console.log('Total hour data points:', window.dashboardState.hourData.length);
 
-        return date >= customAnalyticsState.startDate &&
-               date <= customAnalyticsState.endDate &&
-               customAnalyticsState.days.includes(dayName) &&
-               hourStr >= customAnalyticsState.startHour &&
-               hourStr <= customAnalyticsState.endHour;
-    });
+    // Ensure date range is valid
+    if (!customAnalyticsState.startDate || !customAnalyticsState.endDate) {
+        console.warn('Invalid date range for hourly chart');
+        return [];
+    }
 
-    // Sort by timestamp
-    return filteredData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    try {
+        // Filter by date range, selected days and hour range
+        const filteredData = window.dashboardState.hourData.filter(hour => {
+            try {
+                // Skip if hour data is invalid
+                if (!hour.timestamp) {
+                    return false;
+                }
+
+                // Ensure timestamp is a Date object
+                const date = hour.timestamp instanceof Date ?
+                    hour.timestamp : new Date(hour.timestamp);
+
+                // Skip if date is invalid
+                if (isNaN(date.getTime())) {
+                    console.warn('Invalid timestamp in hour data:', hour.timestamp);
+                    return false;
+                }
+
+                const dayName = getDayName(date.getDay()).toLowerCase();
+                const hourStr = date.getHours().toString().padStart(2, '0') + ':00';
+
+                // Check if the hour is within the selected range
+                return date >= customAnalyticsState.startDate &&
+                       date <= customAnalyticsState.endDate &&
+                       customAnalyticsState.days.includes(dayName) &&
+                       hourStr >= customAnalyticsState.startHour &&
+                       hourStr <= customAnalyticsState.endHour;
+            } catch (error) {
+                console.error('Error filtering hour data:', error, hour);
+                return false;
+            }
+        });
+
+        console.log('Filtered hour data points:', filteredData.length);
+
+        // Sort by timestamp
+        const result = filteredData.sort((a, b) => {
+            try {
+                const dateA = a.timestamp instanceof Date ?
+                    a.timestamp : new Date(a.timestamp);
+                const dateB = b.timestamp instanceof Date ?
+                    b.timestamp : new Date(b.timestamp);
+
+                return dateA - dateB;
+            } catch (error) {
+                console.error('Error sorting hour data:', error);
+                return 0;
+            }
+        });
+
+        if (result.length > 0) {
+            console.log('Sample hour data:', result[0]);
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Critical error in prepareHourlyData:', error);
+        return [];
+    }
 }
 
 // Prepare daily data
 function prepareDailyData() {
-    if (!window.dashboardState || !window.dashboardState.dayData) return [];
+    if (!window.dashboardState || !window.dashboardState.dayData) {
+        console.warn('No day data available for daily chart');
+        return [];
+    }
 
-    // Filter by date range and selected days
-    const filteredData = window.dashboardState.dayData.filter(day => {
-        const date = new Date(day.date);
-        const dayName = getDayName(date.getDay()).toLowerCase();
+    console.log('Preparing daily data...');
+    console.log('Date range:', customAnalyticsState.startDate, 'to', customAnalyticsState.endDate);
+    console.log('Selected days:', customAnalyticsState.days);
+    console.log('Total day data points:', window.dashboardState.dayData.length);
 
-        return date >= customAnalyticsState.startDate &&
-               date <= customAnalyticsState.endDate &&
-               customAnalyticsState.days.includes(dayName);
-    });
+    // Ensure date range is valid
+    if (!customAnalyticsState.startDate || !customAnalyticsState.endDate) {
+        console.warn('Invalid date range for daily chart');
+        return [];
+    }
 
-    // Sort by date
-    return filteredData.sort((a, b) => new Date(a.date) - new Date(b.date));
+    try {
+        // Filter by date range and selected days
+        const filteredData = window.dashboardState.dayData.filter(day => {
+            try {
+                // Skip if day data is invalid
+                if (!day.date) {
+                    return false;
+                }
+
+                // Ensure date is a Date object
+                const date = day.date instanceof Date ?
+                    day.date : new Date(day.date);
+
+                // Skip if date is invalid
+                if (isNaN(date.getTime())) {
+                    console.warn('Invalid date in day data:', day.date);
+                    return false;
+                }
+
+                const dayName = getDayName(date.getDay()).toLowerCase();
+
+                // Check if the day is within the selected range
+                return date >= customAnalyticsState.startDate &&
+                       date <= customAnalyticsState.endDate &&
+                       customAnalyticsState.days.includes(dayName);
+            } catch (error) {
+                console.error('Error filtering day data:', error, day);
+                return false;
+            }
+        });
+
+        console.log('Filtered day data points:', filteredData.length);
+
+        // Sort by date
+        const result = filteredData.sort((a, b) => {
+            try {
+                const dateA = a.date instanceof Date ?
+                    a.date : new Date(a.date);
+                const dateB = b.date instanceof Date ?
+                    b.date : new Date(b.date);
+
+                return dateA - dateB;
+            } catch (error) {
+                console.error('Error sorting day data:', error);
+                return 0;
+            }
+        });
+
+        if (result.length > 0) {
+            console.log('Sample day data:', result[0]);
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Critical error in prepareDailyData:', error);
+        return [];
+    }
 }
 
 // Prepare weekly data
 function prepareWeeklyData() {
-    if (!window.dashboardState || !window.dashboardState.dayData) return [];
+    if (!window.dashboardState || !window.dashboardState.dayData) {
+        console.warn('No day data available for weekly chart');
+        return [];
+    }
 
-    // Group data by week
-    const weekData = {};
+    console.log('Preparing weekly data...');
+    console.log('Date range:', customAnalyticsState.startDate, 'to', customAnalyticsState.endDate);
+    console.log('Selected days:', customAnalyticsState.days);
+    console.log('Total day data points:', window.dashboardState.dayData.length);
 
-    window.dashboardState.dayData.forEach(day => {
-        const date = new Date(day.date);
-        const dayName = getDayName(date.getDay()).toLowerCase();
+    // Ensure date range is valid
+    if (!customAnalyticsState.startDate || !customAnalyticsState.endDate) {
+        console.warn('Invalid date range for weekly chart');
+        return [];
+    }
 
-        // Skip if outside date range or day not selected
-        if (date < customAnalyticsState.startDate ||
-            date > customAnalyticsState.endDate ||
-            !customAnalyticsState.days.includes(dayName)) return;
+    try {
+        // Group data by week
+        const weekData = {};
 
-        // Get week number and year
-        const weekYear = getWeekYear(date);
-        const weekKey = `${weekYear.year}-W${weekYear.week}`;
+        // Create a map of all weeks in the date range
+        // Clone dates to avoid modifying the original state
+        let currentDate = new Date(customAnalyticsState.startDate);
+        const endDate = new Date(customAnalyticsState.endDate);
 
-        if (!weekData[weekKey]) {
-            weekData[weekKey] = {
-                weekNumber: weekYear.week,
-                year: weekYear.year,
-                startDate: getStartOfWeek(date),
-                count: 0,
-                visitorsIn: 0,
-                passersby: 0,
-                visitorsOut: 0,
-                menIn: 0,
-                menOut: 0,
-                womenIn: 0,
-                womenOut: 0,
-                groupIn: 0,
-                groupOut: 0,
-                dwellTimeSum: 0,
-                weatherSum: 0
-            };
+        // Ensure dates are valid
+        if (isNaN(currentDate.getTime()) || isNaN(endDate.getTime())) {
+            console.error('Invalid date range for weekly chart');
+            return [];
         }
 
-        // Add data to week
-        weekData[weekKey].visitorsIn += parseInt(day.visitorsIn || 0);
-        weekData[weekKey].passersby += parseInt(day.passersby || 0);
-        weekData[weekKey].visitorsOut += parseInt(day.visitorsOut || 0);
-        weekData[weekKey].menIn += parseInt(day.menIn || 0);
-        weekData[weekKey].menOut += parseInt(day.menOut || 0);
-        weekData[weekKey].womenIn += parseInt(day.womenIn || 0);
-        weekData[weekKey].womenOut += parseInt(day.womenOut || 0);
-        weekData[weekKey].groupIn += parseInt(day.groupIn || 0);
-        weekData[weekKey].groupOut += parseInt(day.groupOut || 0);
-        weekData[weekKey].dwellTimeSum += parseFloat(day.dwellTime || 0);
-        weekData[weekKey].weatherSum += parseFloat(day.weather || 0);
-        weekData[weekKey].count++;
-    });
+        // Pre-populate weeks to ensure we have entries even for weeks with no data
+        while (currentDate <= endDate) {
+            try {
+                const weekYear = getWeekYear(currentDate);
+                const weekKey = `${weekYear.year}-W${weekYear.week}`;
 
-    // Calculate averages and percentages
-    Object.values(weekData).forEach(week => {
-        week.captureRate = week.passersby > 0 ? (week.visitorsIn / week.passersby) * 100 : 0;
-        week.conversionRate = week.visitorsIn > 0 ? (week.groupIn / week.visitorsIn) * 100 : 0;
-        week.dwellTime = week.count > 0 ? week.dwellTimeSum / week.count : 0;
-        week.weather = week.count > 0 ? week.weatherSum / week.count : 0;
-    });
+                if (!weekData[weekKey]) {
+                    const startOfWeek = getStartOfWeek(currentDate);
+                    weekData[weekKey] = {
+                        weekNumber: weekYear.week,
+                        year: weekYear.year,
+                        startDate: startOfWeek,
+                        count: 0,
+                        visitorsIn: 0,
+                        passersby: 0,
+                        visitorsOut: 0,
+                        menIn: 0,
+                        menOut: 0,
+                        womenIn: 0,
+                        womenOut: 0,
+                        groupIn: 0,
+                        groupOut: 0,
+                        dwellTimeSum: 0,
+                        weatherSum: 0
+                    };
+                }
 
-    // Convert to array and sort by date
-    return Object.values(weekData).sort((a, b) => {
-        if (a.year !== b.year) return a.year - b.year;
-        return a.weekNumber - b.weekNumber;
-    });
+                // Move to next week
+                const nextDate = new Date(currentDate);
+                nextDate.setDate(nextDate.getDate() + 7);
+
+                // Check for infinite loop (in case of date calculation errors)
+                if (nextDate <= currentDate) {
+                    console.error('Date calculation error in prepareWeeklyData');
+                    break;
+                }
+
+                currentDate = nextDate;
+            } catch (weekError) {
+                console.error('Error processing week:', weekError);
+                // Move to next week even if there's an error
+                currentDate.setDate(currentDate.getDate() + 7);
+            }
+        }
+
+        console.log('Pre-populated week keys:', Object.keys(weekData));
+
+        // Now add actual data to the weeks
+        window.dashboardState.dayData.forEach(day => {
+            try {
+                // Skip if day data is invalid
+                if (!day.date) return;
+
+                const date = new Date(day.date);
+                if (isNaN(date.getTime())) {
+                    console.warn('Invalid date in day data:', day.date);
+                    return;
+                }
+
+                const dayName = getDayName(date.getDay()).toLowerCase();
+
+                // Skip if outside date range or day not selected
+                if (date < customAnalyticsState.startDate ||
+                    date > customAnalyticsState.endDate ||
+                    !customAnalyticsState.days.includes(dayName)) {
+                    return;
+                }
+
+                // Get week number and year
+                const weekYear = getWeekYear(date);
+                console.log(`Processing day ${day.date}, calculated week: ${weekYear.week}, year: ${weekYear.year}`);
+                const weekKey = `${weekYear.year}-W${weekYear.week}`;
+
+                // This should always exist due to pre-population, but check just in case
+                if (!weekData[weekKey]) {
+                    const startOfWeek = getStartOfWeek(date);
+                    weekData[weekKey] = {
+                        weekNumber: weekYear.week,
+                        year: weekYear.year,
+                        startDate: startOfWeek,
+                        count: 0,
+                        visitorsIn: 0,
+                        passersby: 0,
+                        visitorsOut: 0,
+                        menIn: 0,
+                        menOut: 0,
+                        womenIn: 0,
+                        womenOut: 0,
+                        groupIn: 0,
+                        groupOut: 0,
+                        dwellTimeSum: 0,
+                        weatherSum: 0
+                    };
+                }
+
+                // Safely parse numeric values
+                const safeParseInt = (value) => {
+                    const parsed = parseInt(value);
+                    return isNaN(parsed) ? 0 : parsed;
+                };
+
+                const safeParseFloat = (value) => {
+                    const parsed = parseFloat(value);
+                    return isNaN(parsed) ? 0 : parsed;
+                };
+
+                // Add data to week
+                weekData[weekKey].visitorsIn += safeParseInt(day.visitorsIn);
+                weekData[weekKey].passersby += safeParseInt(day.passersby);
+                weekData[weekKey].visitorsOut += safeParseInt(day.visitorsOut);
+                weekData[weekKey].menIn += safeParseInt(day.menIn);
+                weekData[weekKey].menOut += safeParseInt(day.menOut);
+                weekData[weekKey].womenIn += safeParseInt(day.womenIn);
+                weekData[weekKey].womenOut += safeParseInt(day.womenOut);
+                weekData[weekKey].groupIn += safeParseInt(day.groupIn);
+                weekData[weekKey].groupOut += safeParseInt(day.groupOut);
+                weekData[weekKey].dwellTimeSum += safeParseFloat(day.dwellTime);
+                weekData[weekKey].weatherSum += safeParseFloat(day.weather);
+                weekData[weekKey].count++;
+            } catch (dayError) {
+                console.error('Error processing day data:', dayError, day);
+            }
+        });
+
+        // Calculate averages and percentages
+        Object.values(weekData).forEach(week => {
+            try {
+                week.captureRate = week.passersby > 0 ? (week.visitorsIn / week.passersby) * 100 : 0;
+                week.conversionRate = week.visitorsIn > 0 ? (week.groupIn / week.visitorsIn) * 100 : 0;
+                week.dwellTime = week.count > 0 ? week.dwellTimeSum / week.count : 0;
+                week.weather = week.count > 0 ? week.weatherSum / week.count : 0;
+            } catch (calcError) {
+                console.error('Error calculating week metrics:', calcError, week);
+                // Set default values if calculation fails
+                week.captureRate = 0;
+                week.conversionRate = 0;
+                week.dwellTime = 0;
+                week.weather = 0;
+            }
+        });
+
+        // Convert to array and sort by date
+        const result = Object.values(weekData).sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+            return a.weekNumber - b.weekNumber;
+        });
+
+        console.log('Weekly data result:', result);
+        console.log('Number of weeks found:', result.length);
+
+        // Enhanced debugging for week data
+        if (result.length > 0) {
+            console.log('Sample week data:', result[0]);
+
+            // Log all week data for debugging
+            console.log('All week data:');
+            result.forEach((week, index) => {
+                console.log(`Week ${index + 1}:`, {
+                    weekNumber: week.weekNumber,
+                    year: week.year,
+                    visitorsIn: week.visitorsIn,
+                    passersby: week.passersby,
+                    // Add other important properties as needed
+                });
+            });
+
+            // Check if any week has data
+            const hasData = result.some(week => week.visitorsIn > 0 || week.passersby > 0);
+            console.log('Has any week with data:', hasData);
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Critical error in prepareWeeklyData:', error);
+        return [];
+    }
 }
 
 // Prepare monthly data
 function prepareMonthlyData() {
-    if (!window.dashboardState || !window.dashboardState.dayData) return [];
+    if (!window.dashboardState || !window.dashboardState.dayData) {
+        console.warn('No day data available for monthly chart');
+        return [];
+    }
 
-    // Group data by month
-    const monthData = {};
+    console.log('Preparing monthly data...');
+    console.log('Date range:', customAnalyticsState.startDate, 'to', customAnalyticsState.endDate);
+    console.log('Selected days:', customAnalyticsState.days);
 
-    window.dashboardState.dayData.forEach(day => {
-        const date = new Date(day.date);
-        const dayName = getDayName(date.getDay()).toLowerCase();
+    // Ensure date range is valid
+    if (!customAnalyticsState.startDate || !customAnalyticsState.endDate) {
+        console.warn('Invalid date range for monthly chart');
+        return [];
+    }
 
-        // Skip if outside date range or day not selected
-        if (date < customAnalyticsState.startDate ||
-            date > customAnalyticsState.endDate ||
-            !customAnalyticsState.days.includes(dayName)) return;
+    try {
+        // Group data by month
+        const monthData = {};
 
-        // Get month and year
-        const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        // Pre-populate months to ensure we have entries even for months with no data
+        let currentDate = new Date(customAnalyticsState.startDate);
+        const endDate = new Date(customAnalyticsState.endDate);
 
-        if (!monthData[monthKey]) {
-            monthData[monthKey] = {
-                month: date.getMonth(),
-                year: date.getFullYear(),
-                date: new Date(date.getFullYear(), date.getMonth(), 1),
-                count: 0,
-                visitorsIn: 0,
-                passersby: 0,
-                visitorsOut: 0,
-                menIn: 0,
-                menOut: 0,
-                womenIn: 0,
-                womenOut: 0,
-                groupIn: 0,
-                groupOut: 0,
-                dwellTimeSum: 0,
-                weatherSum: 0
-            };
+        // Ensure dates are valid
+        if (isNaN(currentDate.getTime()) || isNaN(endDate.getTime())) {
+            console.error('Invalid date range for monthly chart');
+            return [];
         }
 
-        // Add data to month
-        monthData[monthKey].visitorsIn += parseInt(day.visitorsIn || 0);
-        monthData[monthKey].passersby += parseInt(day.passersby || 0);
-        monthData[monthKey].visitorsOut += parseInt(day.visitorsOut || 0);
-        monthData[monthKey].menIn += parseInt(day.menIn || 0);
-        monthData[monthKey].menOut += parseInt(day.menOut || 0);
-        monthData[monthKey].womenIn += parseInt(day.womenIn || 0);
-        monthData[monthKey].womenOut += parseInt(day.womenOut || 0);
-        monthData[monthKey].groupIn += parseInt(day.groupIn || 0);
-        monthData[monthKey].groupOut += parseInt(day.groupOut || 0);
-        monthData[monthKey].dwellTimeSum += parseFloat(day.dwellTime || 0);
-        monthData[monthKey].weatherSum += parseFloat(day.weather || 0);
-        monthData[monthKey].count++;
-    });
+        // Set to first day of month
+        currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
-    // Calculate averages and percentages
-    Object.values(monthData).forEach(month => {
-        month.captureRate = month.passersby > 0 ? (month.visitorsIn / month.passersby) * 100 : 0;
-        month.conversionRate = month.visitorsIn > 0 ? (month.groupIn / month.visitorsIn) * 100 : 0;
-        month.dwellTime = month.count > 0 ? month.dwellTimeSum / month.count : 0;
-        month.weather = month.count > 0 ? month.weatherSum / month.count : 0;
-    });
+        // Pre-populate months
+        while (currentDate <= endDate) {
+            try {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const monthKey = `${year}-${month + 1}`;
 
-    // Convert to array and sort by date
-    return Object.values(monthData).sort((a, b) => {
-        if (a.year !== b.year) return a.year - b.year;
-        return a.month - b.month;
-    });
+                if (!monthData[monthKey]) {
+                    monthData[monthKey] = {
+                        month: month,
+                        year: year,
+                        date: new Date(year, month, 1),
+                        count: 0,
+                        visitorsIn: 0,
+                        passersby: 0,
+                        visitorsOut: 0,
+                        menIn: 0,
+                        menOut: 0,
+                        womenIn: 0,
+                        womenOut: 0,
+                        groupIn: 0,
+                        groupOut: 0,
+                        dwellTimeSum: 0,
+                        weatherSum: 0
+                    };
+                }
+
+                // Move to next month
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            } catch (monthError) {
+                console.error('Error processing month:', monthError);
+                // Move to next month even if there's an error
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            }
+        }
+
+        console.log('Pre-populated month keys:', Object.keys(monthData));
+
+        // Now add actual data to the months
+        window.dashboardState.dayData.forEach(day => {
+            try {
+                // Skip if day data is invalid
+                if (!day.date) return;
+
+                const date = new Date(day.date);
+                if (isNaN(date.getTime())) {
+                    console.warn('Invalid date in day data:', day.date);
+                    return;
+                }
+
+                const dayName = getDayName(date.getDay()).toLowerCase();
+
+                // Skip if outside date range or day not selected
+                if (date < customAnalyticsState.startDate ||
+                    date > customAnalyticsState.endDate ||
+                    !customAnalyticsState.days.includes(dayName)) return;
+
+                // Get month and year
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const monthKey = `${year}-${month + 1}`;
+
+                // This should always exist due to pre-population, but check just in case
+                if (!monthData[monthKey]) {
+                    monthData[monthKey] = {
+                        month: month,
+                        year: year,
+                        date: new Date(year, month, 1),
+                        count: 0,
+                        visitorsIn: 0,
+                        passersby: 0,
+                        visitorsOut: 0,
+                        menIn: 0,
+                        menOut: 0,
+                        womenIn: 0,
+                        womenOut: 0,
+                        groupIn: 0,
+                        groupOut: 0,
+                        dwellTimeSum: 0,
+                        weatherSum: 0
+                    };
+                }
+
+                // Safely parse numeric values
+                const safeParseInt = (value) => {
+                    const parsed = parseInt(value);
+                    return isNaN(parsed) ? 0 : parsed;
+                };
+
+                const safeParseFloat = (value) => {
+                    const parsed = parseFloat(value);
+                    return isNaN(parsed) ? 0 : parsed;
+                };
+
+                // Add data to month
+                monthData[monthKey].visitorsIn += safeParseInt(day.visitorsIn);
+                monthData[monthKey].passersby += safeParseInt(day.passersby);
+                monthData[monthKey].visitorsOut += safeParseInt(day.visitorsOut);
+                monthData[monthKey].menIn += safeParseInt(day.menIn);
+                monthData[monthKey].menOut += safeParseInt(day.menOut);
+                monthData[monthKey].womenIn += safeParseInt(day.womenIn);
+                monthData[monthKey].womenOut += safeParseInt(day.womenOut);
+                monthData[monthKey].groupIn += safeParseInt(day.groupIn);
+                monthData[monthKey].groupOut += safeParseInt(day.groupOut);
+                monthData[monthKey].dwellTimeSum += safeParseFloat(day.dwellTime);
+                monthData[monthKey].weatherSum += safeParseFloat(day.weather);
+                monthData[monthKey].count++;
+            } catch (dayError) {
+                console.error('Error processing day data for month:', dayError, day);
+            }
+        });
+
+        // Calculate averages and percentages
+        Object.values(monthData).forEach(month => {
+            try {
+                month.captureRate = month.passersby > 0 ? (month.visitorsIn / month.passersby) * 100 : 0;
+                month.conversionRate = month.visitorsIn > 0 ? (month.groupIn / month.visitorsIn) * 100 : 0;
+                month.dwellTime = month.count > 0 ? month.dwellTimeSum / month.count : 0;
+                month.weather = month.count > 0 ? month.weatherSum / month.count : 0;
+            } catch (calcError) {
+                console.error('Error calculating month metrics:', calcError, month);
+                // Set default values if calculation fails
+                month.captureRate = 0;
+                month.conversionRate = 0;
+                month.dwellTime = 0;
+                month.weather = 0;
+            }
+        });
+
+        // Convert to array and sort by date
+        const result = Object.values(monthData).sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+            return a.month - b.month;
+        });
+
+        console.log('Monthly data result:', result);
+        console.log('Number of months found:', result.length);
+        if (result.length > 0) {
+            console.log('Sample month data:', result[0]);
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Critical error in prepareMonthlyData:', error);
+        return [];
+    }
 }
 
 // Create or update the chart
 function createChart() {
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    updateProgressText('Preparing chart canvas...');
 
-    // Destroy existing chart if it exists
+    // Properly destroy existing chart if it exists
     if (customAnalyticsChart) {
-        customAnalyticsChart.destroy();
+        try {
+            customAnalyticsChart.destroy();
+        } catch (error) {
+            console.warn('Error destroying existing chart:', error);
+        }
+        customAnalyticsChart = null;
+    }
+
+    // Clear any Chart.js cached instances for this canvas
+    const chartInstance = Chart.getChart('analyticsChart');
+    if (chartInstance) {
+        try {
+            chartInstance.destroy();
+        } catch (error) {
+            console.warn('Error destroying cached chart instance:', error);
+        }
+    }
+
+    // Get a fresh context from the canvas
+    const canvas = document.getElementById('analyticsChart');
+    // Clear the canvas
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Reset canvas dimensions to force a complete redraw
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
     }
 
     // Prepare datasets
+    updateProgressText('Preparing chart datasets...');
     const datasets = [];
     const barDatasets = [];
     const lineDatasets = [];
@@ -463,17 +931,41 @@ function createChart() {
     // Bar datasets (visitors, passersby, etc.)
     const barKPIs = ['visitorsIn', 'passersby', 'visitorsOut', 'menIn', 'menOut', 'womenIn', 'womenOut', 'groupIn', 'groupOut'];
 
-    barKPIs.forEach(kpi => {
-        if (customAnalyticsState.selectedKPIs.includes(kpi)) {
-            barDatasets.push({
-                label: getKPILabel(kpi),
-                data: customAnalyticsState.chartData.map(item => item[kpi] || 0),
-                backgroundColor: colors[kpi].bg,
-                borderColor: colors[kpi].border,
-                borderWidth: 1,
-                borderRadius: 4,
-                yAxisID: 'y',
-                type: 'bar',
+    try {
+        barKPIs.forEach(kpi => {
+            if (customAnalyticsState.selectedKPIs.includes(kpi)) {
+                // Ensure chartData is an array before mapping
+                if (!Array.isArray(customAnalyticsState.chartData)) {
+                    console.warn('chartData is not an array in createChart. Resetting to empty array.');
+                    customAnalyticsState.chartData = [];
+                }
+
+                // Add debugging for chart data
+                if (customAnalyticsState.period === 'weeks') {
+                    console.log(`Creating dataset for KPI: ${kpi}`);
+                    console.log('Chart data length:', customAnalyticsState.chartData.length);
+                }
+
+                barDatasets.push({
+                    label: getKPILabel(kpi),
+                    data: customAnalyticsState.chartData.map((item, index) => {
+                        // Ensure item is an object before accessing properties
+                        if (item && typeof item === 'object') {
+                            const value = item[kpi] || 0;
+                            // Add debugging for week period
+                            if (customAnalyticsState.period === 'weeks') {
+                                console.log(`Data point for ${kpi} at index ${index}:`, value);
+                            }
+                            return value;
+                        }
+                        return 0;
+                    }),
+                    backgroundColor: colors[kpi].bg,
+                    borderColor: colors[kpi].border,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y',
+                    type: 'bar',
                 datalabels: {
                     display: function(context) {
                         // Hide data labels on small screens regardless of user preference
@@ -483,7 +975,15 @@ function createChart() {
                     },
                     align: 'top',
                     anchor: 'end',
-                    formatter: value => value > 0 ? Math.round(value).toLocaleString() : '',
+                    formatter: function(value) {
+                        // Check if value is a valid number
+                        if (value === null || value === undefined || isNaN(value) || value <= 0) {
+                            return '';
+                        }
+                        // Ensure value is treated as a number
+                        const numValue = Number(value);
+                        return Math.round(numValue).toLocaleString();
+                    },
                     font: {
                         weight: 'bold',
                         size: window.innerWidth < 768 ? 9 : 11
@@ -494,19 +994,36 @@ function createChart() {
             });
         }
     });
+    } catch (error) {
+        console.error('Error creating bar datasets:', error);
+        // Continue with empty datasets rather than failing completely
+    }
 
     // Line datasets (capture rate, conversion rate, etc.)
     const lineKPIs = ['captureRate', 'conversionRate', 'dwellTime', 'weather'];
 
-    lineKPIs.forEach(kpi => {
-        if (customAnalyticsState.selectedKPIs.includes(kpi)) {
-            lineDatasets.push({
-                label: getKPILabel(kpi),
-                data: customAnalyticsState.chartData.map(item => item[kpi] || 0),
-                backgroundColor: colors[kpi].bg,
-                borderColor: colors[kpi].border,
-                borderWidth: 2,
-                fill: false,
+    try {
+        lineKPIs.forEach(kpi => {
+            if (customAnalyticsState.selectedKPIs.includes(kpi)) {
+                // Ensure chartData is an array before mapping
+                if (!Array.isArray(customAnalyticsState.chartData)) {
+                    console.warn('chartData is not an array in createChart. Resetting to empty array.');
+                    customAnalyticsState.chartData = [];
+                }
+
+                lineDatasets.push({
+                    label: getKPILabel(kpi),
+                    data: customAnalyticsState.chartData.map(item => {
+                        // Ensure item is an object before accessing properties
+                        if (item && typeof item === 'object') {
+                            return item[kpi] || 0;
+                        }
+                        return 0;
+                    }),
+                    backgroundColor: colors[kpi].bg,
+                    borderColor: colors[kpi].border,
+                    borderWidth: 2,
+                    fill: false,
                 tension: 0.2,
                 yAxisID: kpi === 'dwellTime' ? 'y2' : (kpi === 'weather' ? 'y3' : 'y1'),
                 type: 'line',
@@ -519,12 +1036,17 @@ function createChart() {
                     },
                     align: 'top',
                     anchor: 'end',
-                    formatter: value => {
-                        if (value <= 0) return '';
-                        if (kpi === 'captureRate' || kpi === 'conversionRate') {
-                            return value.toFixed(2) + '%';
+                    formatter: function(value) {
+                        // Check if value is a valid number
+                        if (value === null || value === undefined || isNaN(value) || value <= 0) {
+                            return '';
                         }
-                        return Math.round(value).toLocaleString();
+                        // Ensure value is treated as a number
+                        const numValue = Number(value);
+                        if (kpi === 'captureRate' || kpi === 'conversionRate') {
+                            return numValue.toFixed(2) + '%';
+                        }
+                        return Math.round(numValue).toLocaleString();
                     },
                     font: {
                         weight: 'bold',
@@ -536,28 +1058,133 @@ function createChart() {
             });
         }
     });
+    } catch (error) {
+        console.error('Error creating line datasets:', error);
+        // Continue with empty datasets rather than failing completely
+    }
 
     // Combine datasets
     datasets.push(...barDatasets, ...lineDatasets);
 
     // Prepare labels based on period
-    const labels = customAnalyticsState.chartData.map(item => {
-        switch (customAnalyticsState.period) {
-            case 'hours':
-                return new Date(item.timestamp);
-            case 'days':
-                return new Date(item.date);
-            case 'weeks':
-                return `Week ${item.weekNumber} ${item.year}`;
-            case 'months':
-                return new Date(item.date);
-            default:
-                return '';
+    let labels = [];
+    try {
+        // Ensure chartData is an array before mapping
+        if (!Array.isArray(customAnalyticsState.chartData)) {
+            console.warn('chartData is not an array when preparing labels. Resetting to empty array.');
+            customAnalyticsState.chartData = [];
         }
-    });
+
+        // For debugging
+        console.log('Chart data period:', customAnalyticsState.period);
+        console.log('Chart data length:', customAnalyticsState.chartData.length);
+        if (customAnalyticsState.chartData.length > 0) {
+            console.log('First item sample:', JSON.stringify(customAnalyticsState.chartData[0]));
+        }
+
+        labels = customAnalyticsState.chartData.map((item, index) => {
+            try {
+                // Ensure item is an object before accessing properties
+                if (!item || typeof item !== 'object') {
+                    console.warn(`Invalid chart data item at index ${index}`);
+                    return '';
+                }
+
+                switch (customAnalyticsState.period) {
+                    case 'hours':
+                        if (!item.timestamp) {
+                            console.warn(`Missing timestamp in hour data at index ${index}`);
+                            return `Hour ${index + 1}`;
+                        }
+
+                        const hourDate = item.timestamp instanceof Date ?
+                            item.timestamp : new Date(item.timestamp);
+
+                        if (isNaN(hourDate.getTime())) {
+                            console.warn(`Invalid timestamp in hour data at index ${index}: ${item.timestamp}`);
+                            return `Hour ${index + 1}`;
+                        }
+
+                        return hourDate;
+
+                    case 'days':
+                        if (!item.date) {
+                            console.warn(`Missing date in day data at index ${index}`);
+                            return `Day ${index + 1}`;
+                        }
+
+                        const dayDate = item.date instanceof Date ?
+                            item.date : new Date(item.date);
+
+                        if (isNaN(dayDate.getTime())) {
+                            console.warn(`Invalid date in day data at index ${index}: ${item.date}`);
+                            return `Day ${index + 1}`;
+                        }
+
+                        return dayDate;
+
+                    case 'weeks':
+                        // Format week label properly
+                        if (item.weekNumber === undefined || item.year === undefined) {
+                            console.warn(`Missing week number or year in week data at index ${index}`);
+                            return `Week ${index + 1}`;
+                        }
+
+                        // Log the week data for debugging
+                        console.log(`Week data at index ${index}:`, item);
+
+                        // Format as "Week X YYYY" for better readability
+                        return `Week ${item.weekNumber} ${item.year}`;
+
+                    case 'months':
+                        // For months, use a proper date object if available, otherwise create a month string
+                        if (item.date) {
+                            const monthDate = item.date instanceof Date ?
+                                item.date : new Date(item.date);
+
+                            if (isNaN(monthDate.getTime())) {
+                                console.warn(`Invalid date in month data at index ${index}: ${item.date}`);
+                                return `Month ${index + 1}`;
+                            }
+
+                            return monthDate;
+                        } else if (item.month !== undefined && item.year !== undefined) {
+                            // Create a string representation for the month
+                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const monthIndex = typeof item.month === 'number' ? item.month : parseInt(item.month);
+
+                            if (isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+                                console.warn(`Invalid month index in month data at index ${index}: ${item.month}`);
+                                return `Month ${index + 1}`;
+                            }
+
+                            return `${monthNames[monthIndex]} ${item.year}`;
+                        }
+
+                        console.warn(`Missing month data at index ${index}`);
+                        return `Month ${index + 1}`;
+
+                    default:
+                        console.warn(`Unknown period type: ${customAnalyticsState.period}`);
+                        return `Item ${index + 1}`;
+                }
+            } catch (itemError) {
+                console.error(`Error processing chart label at index ${index}:`, itemError, item);
+                return `Item ${index + 1}`;
+            }
+        });
+
+        // For debugging
+        console.log('Generated labels:', labels);
+    } catch (error) {
+        console.error('Error preparing chart labels:', error);
+        labels = [];
+    }
 
     // Create chart with gradient effects for a more beautiful user experience
-    customAnalyticsChart = new Chart(ctx, {
+    updateProgressText('Rendering chart with beautiful gradients...');
+    try {
+        customAnalyticsChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -602,10 +1229,17 @@ function createChart() {
                             }
 
                             const value = context.parsed.y;
-                            if (context.dataset.yAxisID === 'y1') {
-                                label += value.toFixed(2) + '%';
+                            // Check if value is a valid number
+                            if (value === null || value === undefined || isNaN(value)) {
+                                label += '';
                             } else {
-                                label += Math.round(value).toLocaleString();
+                                // Ensure value is treated as a number
+                                const numValue = Number(value);
+                                if (context.dataset.yAxisID === 'y1') {
+                                    label += numValue.toFixed(2) + '%';
+                                } else {
+                                    label += Math.round(numValue).toLocaleString();
+                                }
                             }
 
                             return label;
@@ -618,13 +1252,33 @@ function createChart() {
             },
             scales: {
                 x: {
+                    // Use category type for weeks, time type for other periods
                     type: customAnalyticsState.period === 'weeks' ? 'category' : 'time',
+                    // Time configuration for non-week periods
                     time: {
                         unit: getTimeUnit(),
                         displayFormats: {
                             hour: 'HH:mm',
-                            day: 'ddd dd MMM yyyy', // Format as per user preference
+                            day: 'ddd dd MMM yyyy',
                             month: 'MMM yyyy'
+                        },
+                        // Only apply time parsing for non-week periods
+                        parser: function(value) {
+                            if (customAnalyticsState.period === 'weeks') {
+                                return null; // Don't parse for weeks
+                            }
+                            return value;
+                        }
+                    },
+                    // Special handling for all period types
+                    afterTickToLabelConversion: function(context) {
+                        if (customAnalyticsState.period === 'weeks') {
+                            // For weeks, ensure we use the original string labels
+                            context.ticks.forEach((tick, index) => {
+                                if (index < labels.length) {
+                                    tick.label = labels[index];
+                                }
+                            });
                         }
                     },
                     title: {
@@ -660,7 +1314,13 @@ function createChart() {
                     ticks: {
                         precision: 0,
                         callback: function(value) {
-                            return Math.round(value).toLocaleString();
+                            // Check if value is a valid number
+                            if (value === null || value === undefined || isNaN(value)) {
+                                return '';
+                            }
+                            // Ensure value is treated as a number
+                            const numValue = Number(value);
+                            return Math.round(numValue).toLocaleString();
                         },
                         font: {
                             size: 14
@@ -697,7 +1357,13 @@ function createChart() {
                     },
                     ticks: {
                         callback: function(value) {
-                            return value.toFixed(2) + '%';
+                            // Check if value is a valid number
+                            if (value === null || value === undefined || isNaN(value)) {
+                                return '';
+                            }
+                            // Ensure value is treated as a number
+                            const numValue = Number(value);
+                            return numValue.toFixed(2) + '%';
                         },
                         font: {
                             size: 14
@@ -775,6 +1441,14 @@ function createChart() {
 
     // Update the chart
     customAnalyticsChart.update();
+    } catch (error) {
+        console.error('Error creating chart:', error);
+        // Reset chart variable to null to ensure we don't have a partially initialized chart
+        customAnalyticsChart = null;
+        // Show error message to user
+        hideLoadingIndicator();
+        throw error; // Re-throw to be caught by the main try-catch in generateChart
+    }
 }
 
 // Helper function to get day name from day index
@@ -785,19 +1459,77 @@ function getDayName(dayIndex) {
 
 // Helper function to get week number and year
 function getWeekYear(date) {
+    // Ensure we have a valid date object
     const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-    const week = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 4).getTime()) / 86400000 / 7) + 1;
-    return { week, year: d.getFullYear() };
+    if (isNaN(d.getTime())) {
+        console.error('Invalid date in getWeekYear:', date);
+        return { week: 1, year: new Date().getFullYear() };
+    }
+
+    // Use a simpler and more reliable method for ISO week calculation
+    // Based on https://weeknumber.com/how-to/javascript
+
+    // Copy date to avoid modifying the original
+    const target = new Date(d.valueOf());
+
+    // ISO week starts on Monday
+    const dayNr = (d.getDay() + 6) % 7;
+
+    // Set target to the Thursday of the current week
+    target.setDate(target.getDate() - dayNr + 3);
+
+    // Get first Thursday of the year
+    const firstThursday = new Date(target.getFullYear(), 0, 1);
+    if (firstThursday.getDay() !== 4) {
+        firstThursday.setMonth(0, 1 + ((4 - firstThursday.getDay()) + 7) % 7);
+    }
+
+    // Calculate week number: Number of weeks between target and first Thursday
+    const weekNum = 1 + Math.ceil((target - firstThursday) / 604800000);
+
+    // Determine the year of the ISO week
+    let yearOfWeek = target.getFullYear();
+
+    // Log for debugging
+    console.log(`getWeekYear for ${d.toISOString()}: week ${weekNum}, year ${yearOfWeek}`);
+
+    return { week: weekNum, year: yearOfWeek };
+}
+
+// Helper function to get the ISO week number
+function getWeekNumber(date) {
+    // This function is now a wrapper around getWeekYear for consistency
+    return getWeekYear(date).week;
 }
 
 // Helper function to get start of week (Monday)
 function getStartOfWeek(date) {
+    // Ensure we have a valid date object
     const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
+    if (isNaN(d.getTime())) {
+        console.error('Invalid date in getStartOfWeek:', date);
+        return new Date(); // Return current date as fallback
+    }
+
+    // Clone the date to avoid modifying the original
+    const result = new Date(d);
+
+    // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
+    const day = result.getDay();
+
+    // Calculate the difference to Monday
+    // If today is Sunday (0), we need to go back 6 days
+    // If today is Monday (1), we need to go back 0 days
+    // If today is Tuesday (2), we need to go back 1 day, etc.
+    const diff = result.getDate() - day + (day === 0 ? -6 : 1);
+
+    // Set the date to Monday
+    result.setDate(diff);
+
+    // Reset time to start of day
+    result.setHours(0, 0, 0, 0);
+
+    return result;
 }
 
 // Helper function to get KPI label
@@ -844,6 +1576,8 @@ function getTimeUnit() {
             return 'hour';
         case 'days':
             return 'day';
+        case 'weeks':
+            return 'week'; // Add specific case for weeks
         case 'months':
             return 'month';
         default:

@@ -26,6 +26,8 @@
             <button class="tab-button" data-tab="benchmark">Hourly Benchmark</button>
             <button class="tab-button" data-tab="week-data">Week Data</button>
             <button class="tab-button" data-tab="custom-analytics">Custom Analytics</button>
+            <button class="tab-button" data-tab="capture-evolution">Capture Rate Evolution</button>
+            <button class="tab-button" data-tab="kpi-explanations">KPI Explanations</button>
         </nav>
     </div>
 
@@ -654,6 +656,401 @@
                         <i class="fas fa-chart-line"></i>
                         <p>Select options and click "Generate Chart" to view data</p>
                     </div>
+                    <div class="loading-indicator" id="analyticsLoadingIndicator">
+                        <div class="spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <p>Processing data...</p>
+                        <div class="progress-text">Preparing complex calculations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="capture-evolution" class="tab-content">
+            <h2>Capture Rate Evolution</h2>
+            <p class="subtitle">Analyze capture rate trends over different time periods</p>
+
+            <!-- First Chart: Capture rates by time of day -->
+            <div class="chart-section">
+                <h3>Capture Rate by Time of Day</h3>
+                <p>Shows capture rates for morning (07:00-10:00), noon (12:00-14:00), afternoon (17:00-20:00), and daily average (during restaurant opening hours)</p>
+                <div class="chart-controls">
+                    <button id="timeOfDayLabelsToggle" class="toggle-button">
+                        <i class="fas fa-tag"></i> Show Data Labels
+                    </button>
+                </div>
+                <div class="days-toggle-container">
+                    <div class="days-toggle-label">Days:</div>
+                    <div class="days-toggle-buttons">
+                        <button id="toggleMonday" class="day-toggle-button active" data-day="1">Mon</button>
+                        <button id="toggleTuesday" class="day-toggle-button active" data-day="2">Tue</button>
+                        <button id="toggleWednesday" class="day-toggle-button active" data-day="3">Wed</button>
+                        <button id="toggleThursday" class="day-toggle-button active" data-day="4">Thu</button>
+                        <button id="toggleFriday" class="day-toggle-button active" data-day="5">Fri</button>
+                        <button id="toggleSaturday" class="day-toggle-button active" data-day="6">Sat</button>
+                        <button id="toggleSunday" class="day-toggle-button active" data-day="0">Sun</button>
+                    </div>
+                </div>
+                <div class="series-toggle-container">
+                    <div class="series-toggle-buttons">
+                        <button id="toggleMorning" class="series-toggle-button active" data-series="morning">
+                            <span class="color-indicator" style="background-color: rgba(255, 99, 132, 1)"></span>
+                            Morning (07:00-10:00)
+                        </button>
+                        <button id="toggleNoon" class="series-toggle-button active" data-series="noon">
+                            <span class="color-indicator" style="background-color: rgba(255, 159, 64, 1)"></span>
+                            Noon (12:00-14:00)
+                        </button>
+                        <button id="toggleAfternoon" class="series-toggle-button active" data-series="afternoon">
+                            <span class="color-indicator" style="background-color: rgba(75, 192, 192, 1)"></span>
+                            Afternoon (17:00-20:00)
+                        </button>
+                        <button id="toggleDaily" class="series-toggle-button active" data-series="daily">
+                            <span class="color-indicator" style="background-color: rgba(45, 107, 34, 1)"></span>
+                            Daily Average
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="captureTimeOfDayChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Second Chart: Custom time frame capture rates -->
+            <div class="chart-section">
+                <h3>Custom Time Frame Capture Rate</h3>
+                <p>Shows capture rates for a custom time range (all hours, not limited to restaurant opening hours)</p>
+                <div class="time-selector-container">
+                    <div class="time-selector">
+                        <label for="customStartTime">Start Time:</label>
+                        <select id="customStartTime"></select>
+                    </div>
+                    <div class="time-selector">
+                        <label for="customEndTime">End Time:</label>
+                        <select id="customEndTime"></select>
+                    </div>
+                    <button id="updateCustomTimeChart" class="update-button">Update Chart</button>
+                </div>
+                <div class="chart-controls">
+                    <button id="customTimeLabelsToggle" class="toggle-button">
+                        <i class="fas fa-tag"></i> Show Data Labels
+                    </button>
+                </div>
+                <div class="days-toggle-container">
+                    <div class="days-toggle-label">Days:</div>
+                    <div class="days-toggle-buttons">
+                        <button id="customToggleMonday" class="day-toggle-button active" data-day="1">Mon</button>
+                        <button id="customToggleTuesday" class="day-toggle-button active" data-day="2">Tue</button>
+                        <button id="customToggleWednesday" class="day-toggle-button active" data-day="3">Wed</button>
+                        <button id="customToggleThursday" class="day-toggle-button active" data-day="4">Thu</button>
+                        <button id="customToggleFriday" class="day-toggle-button active" data-day="5">Fri</button>
+                        <button id="customToggleSaturday" class="day-toggle-button active" data-day="6">Sat</button>
+                        <button id="customToggleSunday" class="day-toggle-button active" data-day="0">Sun</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="captureCustomTimeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Third Chart: Weekly average capture rates -->
+            <div class="chart-section">
+                <h3>Weekly Average Capture Rate</h3>
+                <p>Shows the average daily capture rate for each week (during restaurant opening hours)</p>
+                <div class="chart-controls">
+                    <button id="weeklyLabelsToggle" class="toggle-button">
+                        <i class="fas fa-tag"></i> Show Data Labels
+                    </button>
+                </div>
+                <div class="days-toggle-container">
+                    <div class="days-toggle-label">Days:</div>
+                    <div class="days-toggle-buttons">
+                        <button id="weeklyToggleMonday" class="day-toggle-button active" data-day="1">Mon</button>
+                        <button id="weeklyToggleTuesday" class="day-toggle-button active" data-day="2">Tue</button>
+                        <button id="weeklyToggleWednesday" class="day-toggle-button active" data-day="3">Wed</button>
+                        <button id="weeklyToggleThursday" class="day-toggle-button active" data-day="4">Thu</button>
+                        <button id="weeklyToggleFriday" class="day-toggle-button active" data-day="5">Fri</button>
+                        <button id="weeklyToggleSaturday" class="day-toggle-button active" data-day="6">Sat</button>
+                        <button id="weeklyToggleSunday" class="day-toggle-button active" data-day="0">Sun</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="captureWeeklyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Explanations Tab -->
+        <div id="kpi-explanations" class="tab-content">
+            <h2>KPI Explanations</h2>
+            <p>This page provides detailed explanations of how each Key Performance Indicator (KPI) is calculated on each tab of the dashboard.</p>
+
+            <div class="explanation-section">
+                <h3>Overview Tab</h3>
+                <div class="kpi-explanation">
+                    <h4>Monthly Visitors</h4>
+                    <p>This KPI represents the total number of people who entered the restaurant during the current month.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of all visitor counts for the current month
+                    </div>
+                    <div class="details">
+                        <p>The system counts each person who enters through the door as detected by the people counter sensors. This metric is important for understanding overall foot traffic and is a key input for calculating the capture rate.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Monthly Passersby</h4>
+                    <p>This KPI represents the total number of people who walked past the restaurant during the current month.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of all passersby counts for the current month during restaurant opening hours
+                    </div>
+                    <div class="details">
+                        <p>Passersby are detected by external sensors that count people walking in front of the restaurant. This metric is used as the denominator when calculating capture rate.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Only counted during restaurant opening hours:<br>
+                        • Monday-Friday: 07:00-20:00<br>
+                        • Saturday: 08:00-20:00<br>
+                        • Sunday: 08:00-16:00
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Capture Rate</h4>
+                    <p>This KPI measures the percentage of people passing by the restaurant who decided to enter.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> (Monthly Visitors ÷ Monthly Passersby) × 100%
+                    </div>
+                    <div class="details">
+                        <p>The capture rate is a critical metric for evaluating the restaurant's ability to attract potential customers. It helps assess the effectiveness of external marketing, signage, and the restaurant's visual appeal.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Calculated using data only during restaurant opening hours
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Conversion Rate</h4>
+                    <p>This KPI measures the percentage of visitors who made a purchase (formed a group).</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> (Total Groups ÷ Total Visitors) × 100%
+                    </div>
+                    <div class="details">
+                        <p>The conversion rate helps evaluate how effectively the restaurant converts visitors into paying customers. A higher conversion rate indicates that more visitors are making purchases rather than just browsing or leaving without buying anything.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Average Group Size</h4>
+                    <p>This KPI represents the average number of customers per transaction or group.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Total Customers ÷ Total Groups
+                    </div>
+                    <div class="details">
+                        <p>This metric helps understand typical dining patterns. A higher average group size might indicate more family or group dining experiences, while a lower number might suggest more individual or couple visits.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Average Ticket</h4>
+                    <p>This KPI represents the average amount spent per transaction.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Total Revenue ÷ Total Groups
+                    </div>
+                    <div class="details">
+                        <p>The average ticket value is a key indicator of sales performance. It helps evaluate pricing strategies, upselling effectiveness, and overall revenue generation per transaction.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Revenue per Customer</h4>
+                    <p>This KPI represents the average amount spent by each individual customer.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Total Revenue ÷ Total Customers
+                    </div>
+                    <div class="details">
+                        <p>This metric provides insight into individual spending patterns. It's useful for menu pricing decisions and for evaluating the effectiveness of promotions aimed at increasing individual customer spend.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explanation-section">
+                <h3>Hourly Benchmark Tab</h3>
+                <div class="kpi-explanation">
+                    <h4>Hourly Visitors</h4>
+                    <p>This KPI shows the average number of visitors per hour for each day of the week.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of visitors for a specific hour and day ÷ Number of occurrences of that day in the dataset
+                    </div>
+                    <div class="details">
+                        <p>This metric helps identify peak hours and traffic patterns throughout the week. It's calculated by averaging the visitor count for each specific hour (e.g., Monday at 12:00) across all weeks in the dataset.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Hourly Passersby</h4>
+                    <p>This KPI shows the average number of people passing by the restaurant per hour for each day of the week.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of passersby for a specific hour and day ÷ Number of occurrences of that day in the dataset
+                    </div>
+                    <div class="details">
+                        <p>This metric helps understand foot traffic patterns outside the restaurant throughout different hours and days. It's used as the denominator when calculating hourly capture rates.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Hourly Capture Rate</h4>
+                    <p>This KPI shows the percentage of passersby who entered the restaurant during each hour of operation.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> (Hourly Visitors ÷ Hourly Passersby) × 100%
+                    </div>
+                    <div class="details">
+                        <p>The hourly capture rate helps identify specific times when the restaurant is more or less effective at attracting customers. This can inform staffing decisions, special promotions, or menu adjustments for specific time periods.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Only calculated during restaurant opening hours. Hours with zero passersby are excluded from the calculation to avoid division by zero.
+                    </div>
+                </div>
+            </div>
+
+            <div class="explanation-section">
+                <h3>Week Data Tab</h3>
+                <div class="kpi-explanation">
+                    <h4>Daily Visitors</h4>
+                    <p>This KPI shows the average number of visitors for each day of the week.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of all visitor counts for a specific day ÷ Number of occurrences of that day in the dataset
+                    </div>
+                    <div class="details">
+                        <p>This metric provides insight into which days of the week typically have the highest and lowest visitor counts. It helps with weekly staffing planning and identifying days that might need special attention or promotions.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Daily Passersby</h4>
+                    <p>This KPI shows the average number of people passing by the restaurant for each day of the week.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of all passersby counts for a specific day ÷ Number of occurrences of that day in the dataset
+                    </div>
+                    <div class="details">
+                        <p>This metric helps understand weekly patterns in foot traffic outside the restaurant. It's used as the denominator when calculating daily capture rates.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Only counted during restaurant opening hours for each day
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Daily Capture Rate</h4>
+                    <p>This KPI shows the percentage of passersby who entered the restaurant for each day of the week.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> (Daily Visitors ÷ Daily Passersby) × 100%
+                    </div>
+                    <div class="details">
+                        <p>The daily capture rate helps identify which days of the week the restaurant is most effective at attracting customers. This can inform marketing strategies targeted at specific days with lower capture rates.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Only calculated during restaurant opening hours for each day. Days with zero passersby are excluded from the calculation.
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Daily Revenue</h4>
+                    <p>This KPI shows the average revenue generated for each day of the week.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of all transaction amounts for a specific day ÷ Number of occurrences of that day in the dataset
+                    </div>
+                    <div class="details">
+                        <p>This metric provides insight into which days generate the most revenue. When compared with visitor counts, it can reveal days when customers spend more or less per visit.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explanation-section">
+                <h3>Custom Analytics Tab</h3>
+                <div class="kpi-explanation">
+                    <h4>Custom Date Range Visitors</h4>
+                    <p>This KPI shows the total number of visitors during the user-selected date range.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of all visitor counts within the selected date range
+                    </div>
+                    <div class="details">
+                        <p>This metric allows for analysis of visitor patterns during specific time periods of interest, such as during promotions, holidays, or special events.</p>
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Custom Date Range Capture Rate</h4>
+                    <p>This KPI shows the percentage of passersby who entered the restaurant during the user-selected date range.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> (Total Visitors in date range ÷ Total Passersby in date range) × 100%
+                    </div>
+                    <div class="details">
+                        <p>This metric allows for analysis of the restaurant's ability to attract customers during specific time periods, which can be useful for evaluating the effectiveness of seasonal promotions or external factors.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Only calculated using data during restaurant opening hours within the selected date range
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Custom Date Range Revenue</h4>
+                    <p>This KPI shows the total revenue generated during the user-selected date range.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> Sum of all transaction amounts within the selected date range
+                    </div>
+                    <div class="details">
+                        <p>This metric allows for revenue analysis during specific time periods, which can help evaluate the financial impact of promotions, menu changes, or external events.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explanation-section">
+                <h3>Capture Rate Evolution Tab</h3>
+                <div class="kpi-explanation">
+                    <h4>Time of Day Capture Rate</h4>
+                    <p>This KPI shows the capture rate broken down by different times of day over the selected period.</p>
+                    <div class="formula">
+                        <strong>Morning (07:00-10:00):</strong> (Morning Visitors ÷ Morning Passersby) × 100%<br>
+                        <strong>Noon (12:00-14:00):</strong> (Noon Visitors ÷ Noon Passersby) × 100%<br>
+                        <strong>Afternoon (17:00-20:00):</strong> (Afternoon Visitors ÷ Afternoon Passersby) × 100%<br>
+                        <strong>Daily Average:</strong> (Daily Visitors ÷ Daily Passersby) × 100%
+                    </div>
+                    <div class="details">
+                        <p>This metric provides insight into how the restaurant's ability to attract customers varies throughout the day. It can help identify specific time periods that might need attention or that show particularly strong performance.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Days with zero passersby during a specific time period are excluded from the calculation for that time period. The daily average is calculated only during restaurant opening hours.
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Custom Time Frame Capture Rate</h4>
+                    <p>This KPI shows the capture rate for a user-defined time range across the selected period.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> (Visitors during selected hours ÷ Passersby during selected hours) × 100%
+                    </div>
+                    <div class="details">
+                        <p>This metric allows for analysis of capture rate during specific hours of interest. It's useful for evaluating the effectiveness of time-specific promotions or understanding customer behavior during particular hours.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> This uses the hours defined in the time selector and is not limited to restaurant opening hours. Days with zero passersby during the selected hours are excluded from the calculation.
+                    </div>
+                </div>
+
+                <div class="kpi-explanation">
+                    <h4>Weekly Capture Rate</h4>
+                    <p>This KPI shows the average capture rate for each week in the dataset.</p>
+                    <div class="formula">
+                        <strong>Formula:</strong> (Total Weekly Visitors ÷ Total Weekly Passersby) × 100%
+                    </div>
+                    <div class="details">
+                        <p>This metric helps track the restaurant's performance in attracting customers over time. It can reveal trends, seasonal patterns, or the impact of long-term changes in marketing or operations.</p>
+                    </div>
+                    <div class="note">
+                        <strong>Note:</strong> Only calculated using data during restaurant opening hours. Weeks with zero passersby are excluded from the calculation.
+                    </div>
                 </div>
             </div>
         </div>
@@ -682,6 +1079,9 @@
 
     <!-- Load custom analytics script (separate to avoid conflicts) -->
     <script src="customAnalytics.js"></script>
+
+    <!-- Load capture evolution script (separate to avoid conflicts) -->
+    <script src="captureEvolution.js"></script>
 
     <!-- Load app initialization last -->
     <script src="app.js"></script>
